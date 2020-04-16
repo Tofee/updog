@@ -8,7 +8,7 @@
 </p>
 
 Updog is a replacement for Python's `SimpleHTTPServer`. 
-It allows uploading and downloading via HTTP/S, 
+It allows uploading, downloading, folder manipulation and executions via HTTP/S, 
 can set ad hoc SSL certificates and use HTTP basic auth.
 
 <p align="center">
@@ -32,6 +32,11 @@ Install using pip:
 | --password PASSWORD                 | Use a password to access the page. (No username) |
 | --ssl                               | Enable transport encryption via SSL              |
 | --version                           | Show version                                     |
+| -k                                  | Killable server (from web)                       |
+| -l                                  | Lite UI version                                  |
+| -m                                  | Allow file modification (del, ren, copy, new dir)|
+| -x                                  | Allow file execution                             |
+| -f FILE                             | Serve only specific file                         |
 | -h, --help                          | Show help                                        |
 
 ## Examples
@@ -60,7 +65,3 @@ enter the password in the password field.
 
 `updog --ssl`
 
-## Thanks
-
-A special thank you to [Nicholas Smith](http://nixmith.com) for
-designing the updog logo.
