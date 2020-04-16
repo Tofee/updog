@@ -241,8 +241,7 @@ def main():
                     return redirect(request.referrer)
 
                 # Assuming all is good, process and save out the file
-                # TODO:
-                # - Add support for overwriting
+                # This assumes the user wanted to overwrite the file
                 if file:
                     filename = secure_filename(file.filename)
                     full_path = os.path.join(path, filename)
@@ -276,6 +275,7 @@ def main():
     else:
         success('Serving {}...'.format(args.directory, args.port))
 
+    #exit coded
     def handler(signal, frame):
         print()
         error('Exiting!')
