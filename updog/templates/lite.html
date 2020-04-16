@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<link rel="icon" type="image/gif" href="data:image/gif;base64,R0lGODlhEAAQAIAAAAAAAAAAACH5BAkAAAEALAAAAAAQABAAAAIgjI+py+0PEQiT1lkNpppnz4HfdoEH2W1nCJRfBMfyfBQAOw==" />
+    <!-- Title -->
+    <title>updog - {{ directory }}</title>
+</head>
+{% if canModify %}
+<script type="text/javascript">
+function uploading(){
+    var upForm = document.getElementById('uploadForm');
+    
+    if(upForm.file.value == ''){
+        alert('Please insert a file first.');
+        return false;
+    }
+    
+    var files = upForm.file.files;
+    
+    var filesPresent = [{% for file in files %}
+    '{{ file.name }}',
+    {% endfor %}''];
+    
+    for(var i=0; i<files.length; i++){
+        if(filesPresent.includes(upForm.file.files[i].name)){
+            if(!confirm('Are you sure you want to replace the file "' + upForm.file.files[i].name + '"?'))
+                return false;
+        }
+    }
+    
+    return true;
+}
+</script>
+{% endif %}
+<body>
+<div >
+
+    <!-- Header -->
+    <header id="header" >
+       <div onclick="document.location='/'">🐶</div>
+
+        <div >
+            <h2>{{ directory }}</h2>
+        </div>
+    </header>
+
+    {% if canModify %}
+    <!-- ----- Upload Form ----- -->
+    <div >
+        <form method="post" action="/upload" enctype="multipart/form-data" onsubmit="return uploading()" id="uploadForm">
+            <!-- -- Upload File -- -->
+            <div >
+                <input type="file" name="file" id="file" 
+                       data-multiple-caption="{count} files selected" multiple/>
+                
+                </label>
+                <input type="hidden" name="path" value="{{ directory }}">
+            </div>
+            <!-- -- Upload Btn -- -->
+                <button type="submit" >
+                    Upload
+                </button>
+        </form>
+        {% if canModify %}
+        <button onclick="newDir()">New Folder</button>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if is_subdirectory %}
+    <section >
+        <a href="/{{ back }}">
+            <i ></i>
+            <span>Back</span>
+        </a>
+    </section>
+    {% endif %}
+
+    <!-- Table -->
+    <section >
+        <table id="tableData" >
+            <thead>
+            <tr>
+                <th width="4%"><!--Type (Directory or File)--></th>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Last Modified</th>
+                {% if canModify %}
+                <th>Actions</th> <!-- Actions (Copy, Delete, Rename) -->
+                {% endif %}
+                {% if canExecute %}
+                <th></th> <!-- Execute -->
+                {% endif %}
+                <th></th> <!-- View file -->
+            </tr>
+            </thead>
+            <tbody>
+            {% for file in files %}
+            <tr>
+                <td> <!-- Icon -->
+                    {% if file.is_dir %}📂{% else %}📄{% endif %}
+                </td>
+                <td> <!-- Name -->
+                    <a href="/{{ file.rel_path }}">{{ file.name }}{% if file.is_dir %}/{% endif %}</a>
+                </td>
+                <td data-order="{{ file.size_sort }}"> <!-- File size -->
+                    {{ file.size }}
+                </td>
+                <td data-order="{{ file.last_modified_sort }}"> <!-- File last modified -->
+                    {{ file.last_modified }}
+                </td>
+                {% if canModify %}
+                    <td> <!-- File last modified -->
+                        {% if file.can_write %}
+                            <a href="#" alt='Delete file' onclick="deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
+                            <a href="#" alt='Rename file' onclick="renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
+                            <a href="#" alt='Copy file' onclick="copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
+                        {% endif %}
+                    </td>
+                {% endif %}
+                {% if canExecute %}
+                    <td>
+                        {% if file.can_execute %}
+                            <a href="#" alt='Execute file' onclick="executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
+                        {% endif %}
+                    </td>
+                {% endif %}
+                <td> <!-- View file -->
+                    {% if not file.is_dir %}
+                    <a href="/{{ file.rel_path }}?view">View in browser</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div> <!-- end class conn -->
+{% if killable %}
+<br><button onclick="killServer()">Kill updog server</button>
+{% endif %}
+{% if canModify or canExecute %}
+<form method="post" action="/fileAction" id="fileAction">
+<input type="hidden" name="path" value="{{ directory }}">
+<input type="hidden" name="file" value="">
+<input type="hidden" name="action" value="">
+<input type="hidden" name="newName" value="">
+</form>
+{% endif %}
+<script type="text/javascript">
+{% if killable %}
+function killServer(){
+    if(confirm('Are you sure you want to terminate the updog server?'))
+        window.location.href='/?stop';
+}
+{% endif %}
+var inputs = document.querySelectorAll( '.uploadFile' );
+
+Array.prototype.forEach.call( inputs, function( input )
+{
+	var label	 = input.nextElementSibling,
+		labelVal = label.innerHTML;
+
+	input.addEventListener( 'change', function( e )
+	{
+		var fileName = '';
+		if( this.files && this.files.length > 1 )
+			fileName = ( this.getAttribute( 'data-multiple-caption' ) || '' ).replace( '{count}', this.files.length );
+		else {
+			fileName = e.target.value.split("\\").pop();
+		}
+
+		if( fileName )
+			label.querySelector( 'span' ).innerHTML = fileName;
+		else
+			label.innerHTML = labelVal;
+	});
+});
+
+{% if canModify %}
+var form = document.getElementById('fileAction');
+function renameFile(fileName){
+    var nname = prompt('Please enter a new name:', fileName);
+    
+    if (nname != null && nname != ''){
+        //send back to server rename action with the new name
+        form.action.value = 'rename';
+        form.file.value = fileName;
+        form.newName.value = nname;
+        form.submit();
+    }
+}
+function copyFile(fileName){
+    var nname = prompt('Please enter the name of the duplicate:', fileName);
+    
+    if (nname != null && nname != '' && nname != fileName){
+        //send back to server the name of the duplicate
+        form.action.value = 'copy';
+        form.file.value = fileName;
+        form.newName.value = nname;
+        form.submit();
+    }
+}
+function deleteFile(fileName){
+    if(confirm('Are you sure you want to delete file "' + fileName + '"?')){
+        //send back to server delete this file
+        form.action.value = 'delete';
+        form.file.value = fileName;
+        form.submit();
+    }
+}
+function newDir(){
+    var nname = prompt('Please enter the name for the new directory:');
+    
+    if (nname != null && nname != ''){
+        //send back to server new directory request
+        form.action.value = 'newFolder';
+        form.file.value = nname;
+        form.submit();
+    }
+}
+{% endif %}
+
+{% if canExecute %}
+var form = document.getElementById('fileAction');
+function executeFile(fileName){
+    if(confirm('Are you sure you want to execute file "' + fileName + '"?')){
+        //send back to server execute this file
+        form.action.value = 'execute';
+        form.file.value = fileName;
+        form.submit();
+    }
+}
+{% endif %}
+</script>
+
+</body>
+</html>

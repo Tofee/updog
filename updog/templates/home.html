@@ -13,7 +13,33 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/datatable/datatables.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}">
 </head>
-
+{% if canModify %}
+<script type="text/javascript">
+function uploading(){
+    var upForm = document.getElementById('uploadForm');
+    
+    if(upForm.file.value == ''){
+        alert('Please insert a file first.');
+        return false;
+    }
+    
+    var files = upForm.file.files;
+    
+    var filesPresent = [{% for file in files %}
+    '{{ file.name }}',
+    {% endfor %}''];
+    
+    for(var i=0; i<files.length; i++){
+        if(filesPresent.includes(upForm.file.files[i].name)){
+            if(!confirm('Are you sure you want to replace the file "' + upForm.file.files[i].name + '"?'))
+                return false;
+        }
+    }
+    
+    return true;
+}
+</script>
+{% endif %}
 <body>
 <div class="conn">
 
@@ -24,13 +50,14 @@
         </div>
 
         <div class="heading_title_p">
-            <h2>Directory: {{ directory }}</h2>
+            <h2>{{ directory }}</h2>
         </div>
     </header>
 
+    {% if canModify %}
     <!-- ----- Upload Form ----- -->
     <div class="inputUploadP">
-        <form method="post" action="/upload" enctype="multipart/form-data" class="uploadForm">
+        <form method="post" action="/upload" enctype="multipart/form-data" class="uploadForm" onsubmit="return uploading()" id="uploadForm">
             <!-- -- Upload File -- -->
             <div class="uploadFile_P">
                 <input type="file" name="file" id="file" class="uploadFile"
@@ -49,6 +76,7 @@
             </p>
         </form>
     </div>
+    {% endif %}
 
     {% if is_subdirectory %}
     <section class="backBtn_p">
@@ -68,6 +96,12 @@
                 <th>Name</th>
                 <th>Size</th>
                 <th>Last Modified</th>
+                {% if canModify %}
+                <th>Actions</th> <!-- Actions (Copy, Delete, Rename) -->
+                {% endif %}
+                {% if canExecute %}
+                <th></th> <!-- Execute -->
+                {% endif %}
                 <th></th> <!-- View file -->
             </tr>
             </thead>
@@ -90,9 +124,25 @@
                 <td data-order="{{ file.last_modified_sort }}"> <!-- File last modified -->
                     {{ file.last_modified }}
                 </td>
+                {% if canModify %}
+                    <td> <!-- File last modified -->
+                        {% if file.can_write %}
+                            <a href="#" alt='Delete file' onclick="deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
+                            <a href="#" alt='Rename file' onclick="renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
+                            <a href="#" alt='Copy file' onclick="copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
+                        {% endif %}
+                    </td>
+                {% endif %}
+                {% if canExecute %}
+                    <td>
+                        {% if file.can_execute %}
+                            <a href="#" alt='Execute file' onclick="executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
+                        {% endif %}
+                    </td>
+                {% endif %}
                 <td> <!-- View file -->
                     {% if not file.is_dir %}
-                    <a href="/{{ file.rel_path }}?view">View in browser</a>
+                    <a href="/{{ file.rel_path }}?view">View</a>
                     {% endif %}
                 </td>
             </tr>
@@ -101,15 +151,91 @@
         </table>
     </section>
 
+{% if canModify %}
+<button class="uploadBtn btn btn-primary" onclick="newDir()">New Folder</button>
+{% endif %}
     <footer>
+		{% if killable %}
+			<button alt='Kill this server!!' onclick="killServer()">#Kill Server#</button>
+		{% endif %}
         <p>
             updog v{{ version }}
         </p>
     </footer>
 
 </div> <!-- end class conn -->
-
+{% if canModify or canExecute %}
+<form method="post" action="/fileAction" id="fileAction">
+<input type="hidden" name="path" value="{{ directory }}">
+<input type="hidden" name="file" value="">
+<input type="hidden" name="action" value="">
+<input type="hidden" name="newName" value="">
+</form>
+{% endif %}
 <!-- Scripts -->
+<script type="text/javascript">
+{% if killable %}
+function killServer(){
+    if(confirm('Are you sure you want to terminate the updog server?'))
+        window.location.href='/?stop';
+}
+{% endif %}
+
+{% if canModify %}
+var form = document.getElementById('fileAction');
+function renameFile(fileName){
+    var nname = prompt('Please enter a new name:', fileName);
+    
+    if (nname != null && nname != ''){
+        //send back to server rename action with the new name
+        form.action.value = 'rename';
+        form.file.value = fileName;
+        form.newName.value = nname;
+        form.submit();
+    }
+}
+function copyFile(fileName){
+    var nname = prompt('Please enter the name of the duplicate:', fileName);
+    
+    if (nname != null && nname != '' && nname != fileName){
+        //send back to server the name of the duplicate
+        form.action.value = 'copy';
+        form.file.value = fileName;
+        form.newName.value = nname;
+        form.submit();
+    }
+}
+function deleteFile(fileName){
+    if(confirm('Are you sure you want to delete file "' + fileName + '"?')){
+        //send back to server delete this file
+        form.action.value = 'delete';
+        form.file.value = fileName;
+        form.submit();
+    }
+}
+function newDir(){
+    var nname = prompt('Please enter the name for the new directory:');
+    
+    if (nname != null && nname != ''){
+        //send back to server new directory request
+        form.action.value = 'newFolder';
+        form.file.value = nname;
+        form.submit();
+    }
+}
+{% endif %}
+{% if canExecute %}
+var form = document.getElementById('fileAction');
+function executeFile(fileName){
+    if(confirm('Are you sure you want to execute file "' + fileName + '"?')){
+        //send back to server execute this file
+        form.action.value = 'execute';
+        form.file.value = fileName;
+        form.submit();
+    }
+}
+{% endif %}
+</script>
 <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/datatable/datatables.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
