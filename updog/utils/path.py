@@ -31,20 +31,27 @@ def human_readable_file_size(size):
 def process_files(directory_files, base_directory):
     files = []
     for file in directory_files:
+        relPath = get_relative_path(file.path, base_directory)
         if file.is_dir():
             size = '--'
             size_sort = -1
+            canExecute = False
+            canWrite = os.access(relPath, os.W_OK)
         else:
             size = human_readable_file_size(file.stat().st_size)
             size_sort = file.stat().st_size
+            canExecute = os.access(relPath, os.X_OK)
+            canWrite = os.access(relPath, os.W_OK)
         files.append({
             'name': file.name,
             'is_dir': file.is_dir(),
-            'rel_path': get_relative_path(file.path, base_directory),
+            'rel_path': relPath,
             'size': size,
             'size_sort': size_sort,
             'last_modified': ctime(file.stat().st_mtime),
-            'last_modified_sort': file.stat().st_mtime
+            'last_modified_sort': file.stat().st_mtime,
+            'can_execute': canExecute,
+            'can_write': canWrite
         })
     return files
 
