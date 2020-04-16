@@ -18,7 +18,7 @@ can set ad hoc SSL certificates and use HTTP basic auth.
 
 Install using pip:
 
-`pip3 install updog`
+`pip3 install git+https://github.com/s-razoes/updog.git`
 
 ## Usage
 
