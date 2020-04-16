@@ -67,3 +67,18 @@ enter the password in the password field.
 **Lite version with kill button and can manipulate and execute files:**
 
 `updog -l -k -m -x`
+
+
+
+
+**TODO**
+- SSL: Accept certificates to use
+- Drag and drop (normal UI only)
+- Select multiple files to:
+  - Move (within this directory tree only)
+  - Delete
+  - Download as a single zip file
+- Breadcrumbs for directory
+- New: Drop files only UI
+- Fix: Name arrows for ascending descending (normal UI)
+- Fix: Order files by name (lite UI)
