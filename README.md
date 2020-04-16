@@ -82,3 +82,5 @@ enter the password in the password field.
 - New: Drop files only UI
 - Fix: Name arrows for ascending descending (normal UI)
 - Fix: Order files by name (lite UI)
+- logFile to dump info into
+- info to show in the webpage (like upload successful, or file deleted etc)
