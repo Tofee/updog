@@ -4,13 +4,13 @@ import argparse
 import sys
 import shutil
 
-from flask import Flask, render_template, send_file, redirect, request, send_from_directory, url_for, abort
+from flask import Flask, flash, render_template, send_file, redirect, request, send_from_directory, url_for, abort
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files
+from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles
 from updog.utils.output import error, info, warn, success
 from updog import version as VERSION
 
@@ -67,7 +67,7 @@ def serveFile(path, attachment):
 def main():
     args = parse_arguments()
     app = Flask(__name__)
-    
+    app.secret_key = b'_5#y2L"F4Qdfaw#3r2fwrsfjc..65t -1\n\xec]/'
     auth = HTTPBasicAuth()
     global base_directory
     base_directory = args.directory
@@ -89,11 +89,11 @@ def main():
     ############################################
     # File Browsing and Download Functionality #
     ############################################
-    @app.route('/', defaults={'path': None})
-    @app.route('/<path:path>')
+    @app.route('/', defaults={'path': None}, methods=['GET'])
+    @app.route('/<path:path>', methods=['GET'])
     @auth.login_required
-    def home(path):
-        #exit the updog
+    def home(path, message=''):    
+        #kill the server
         if args.k:
             if request.args.get('stop') is not None:
                 print()
@@ -102,7 +102,8 @@ def main():
         #only serving a specific file option
         if fileToServe:
             return serveFile(fileToServe, False)
-            
+        
+        
         # If there is a path parameter and it is valid
         if path and is_valid_subpath(path, base_directory):
             # Take off the trailing '/'
@@ -138,12 +139,15 @@ def main():
             except PermissionError:
                 abort(403, 'Read Permission Denied: ' + requested_path)
                 
+            #directory_files = sorted(directory_files)
             homeHtml = 'home.html'
             if args.l:
                 homeHtml = 'lite.html'
-                
-            return render_template(homeHtml, files=directory_files, back=back,
-                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, canExecute=args.x, canModify=args.m)
+            
+            pathsList=split_path(requested_path, base_directory)
+            
+            return render_template(homeHtml, files=sorted(directory_files, key=sortFiles), back=back,
+                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
             return redirect('/')
 
@@ -157,21 +161,37 @@ def main():
             abort(403, 'Permission denied')
             
         if request.method == 'POST':
+            if 'action' not in request.form or 'path' not in request.form:
+                #invalid path or action
+                flash('Invalid action.')
+                return redirect(request.referrer)
+                
             filename = secure_filename(request.form['file'])
             full_path = os.path.join(request.form['path'], filename)
             
-            if request.form['action'] == 'newFolder' and args.m:
-                os.mkdir(full_path)
+            # Prevent access to paths outside of base directory
+            if not is_valid_upload_path(request.form['path'], base_directory):
+                flash('Not a valid path.')
+                return redirect(request.referrer)
             
-            if not os.path.exists(filename):
+            if request.form['action'] == 'newFolder' and args.m:
+                if not os.path.exists(full_path):
+                    os.mkdir(full_path)
+                    flash('Directory created')
+                return redirect(request.referrer)
+            
+            if not os.path.exists(full_path):
                 abort(404, 'File not found');
 
             #execute the file
             if request.form['action'] == 'execute' and args.x:
-                os.system("sh %s" % full_path)
+                os.system("%s" % full_path)
+                flash('File executed.')
+                return redirect(request.referrer)
             
             #allow file modifications
             if not args.m:
+                flash('File modifications not allowed.')
                 return redirect(request.referrer)
             
             #delete the file
@@ -181,9 +201,18 @@ def main():
                     os.remove(full_path);
                 else: #if is directory
                     shutil.rmtree(full_path)
+                flash('Deleted.')
+                return redirect(request.referrer)
+            
+            if 'newName' not in request.form:
+                #no newName present
+                flash('No new name added.')
+                return redirect(request.referrer)
             
             #from this point on, needs new name
             if request.form['newName'] == '':
+                #invalid newName
+                flash('No new name returned.')
                 return redirect(request.referrer)
                 
             #options bellow expect field newName
@@ -192,20 +221,25 @@ def main():
             
             if new_full_path == full_path:
                 #same name, ignore
+                flash('Same file?')
                 return redirect(request.referrer)
             
             #rename the file to a new name
             if request.form['action'] == 'rename':
-                shutil.move(full_path, new_full_path);
+                shutil.move(full_path, new_full_path)
+                flash('File renamed.')
+                return redirect(request.referrer)
             
             #copy the file
             if request.form['action'] == 'copy':
                 if os.path.isdir(full_path):
                     if os.path.isdir(new_full_path):
-                        shutil.copytree(full_path,new_full_path);
+                        shutil.copytree(full_path,new_full_path)
                 else:
                     if not os.path.isdir(new_full_path):
-                        shutil.copyfile(full_path,new_full_path);
+                        shutil.copyfile(full_path,new_full_path)
+                flash('Copied file.')
+                return redirect(request.referrer)
             
                 
             return redirect(request.referrer)
