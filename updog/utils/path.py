@@ -55,6 +55,8 @@ def process_files(directory_files, base_directory):
         })
     return files
 
+def sortFiles(i):
+    return i['name']
 
 def get_parent_directory(path, base_directory):
     difference = get_relative_path(path, base_directory)
@@ -63,3 +65,28 @@ def get_parent_directory(path, base_directory):
         return ''
     else:
         return '/'.join(difference_fields[:-1])
+
+def split_path(path, base_directory):
+    if path == '' or path == '/' or path == base_directory:
+        return [[''],[base_directory]]
+    pathDic = []
+    while 1:
+        path, folder = os.path.split(path)
+        
+        pathDic.append(folder)
+        #locations.append(folder)
+        if path == base_directory or path == '' or path =='/':
+            break
+            
+    pathDic.append(base_directory)
+    locations=['/']
+    pathDic.reverse()
+    currentPath = ''
+    #ignore the base directory
+    x = 1
+    while x < len(pathDic):
+        currentPath += pathDic[x] + '/'
+        locations.append('/'+currentPath)
+        x += 1
+    locations[len(locations)-1]=''
+    return [locations,pathDic]
