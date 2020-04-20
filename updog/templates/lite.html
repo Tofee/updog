@@ -9,8 +9,8 @@
     <!-- Title -->
     <title>updog - {{ directory }}</title>
 </head>
-{% if canModify %}
 <script type="text/javascript">
+{% if canModify %}
 function uploading(){
     var upForm = document.getElementById('uploadForm');
     
@@ -21,9 +21,7 @@ function uploading(){
     
     var files = upForm.file.files;
     
-    var filesPresent = [{% for file in files %}
-    '{{ file.name }}',
-    {% endfor %}''];
+    var filesPresent = [{% for file in files %}{% if not file.is_dir %}'{{ file.name }}',{% endif %}{% endfor %}''];
     
     for(var i=0; i<files.length; i++){
         if(filesPresent.includes(upForm.file.files[i].name)){
@@ -34,8 +32,17 @@ function uploading(){
     
     return true;
 }
-</script>
 {% endif %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      alert('{{ message }}')
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+</script>
 <body>
 <div >
 
@@ -43,10 +50,14 @@ function uploading(){
     <header id="header" >
        <div onclick="document.location='/'">🐶</div>
 
-        <div >
-            <h2>{{ directory }}</h2>
+        <div class="heading_title_p">
+            <h2>{% for i in range(0,len) %}{% if directories[i] != '' %}<a href="{{ directories[i] }}" style="text-decoration: underline;">{{paths[i]}}</a>{% else %}{{paths[i]}}{% endif %}/{% endfor %}</h2>
         </div>
     </header>
+
+{% if alertUser %}
+<span>{{ alertUser }}</span><br><br>
+{% endif %}
 
     {% if canModify %}
     <!-- ----- Upload Form ----- -->
@@ -116,16 +127,16 @@ function uploading(){
                 {% if canModify %}
                     <td> <!-- File last modified -->
                         {% if file.can_write %}
-                            <a href="#" alt='Delete file' onclick="deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
-                            <a href="#" alt='Rename file' onclick="renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
-                            <a href="#" alt='Copy file' onclick="copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
+                            <a href="#" alt='Delete file' onclick="return deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
+                            <a href="#" alt='Rename file' onclick="return renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
+                            <a href="#" alt='Copy file' onclick="return copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
                         {% endif %}
                     </td>
                 {% endif %}
                 {% if canExecute %}
                     <td>
                         {% if file.can_execute %}
-                            <a href="#" alt='Execute file' onclick="executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
+                            <a href="#" alt='Execute file' onclick="return executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
                         {% endif %}
                     </td>
                 {% endif %}
@@ -151,6 +162,7 @@ function uploading(){
 <input type="hidden" name="newName" value="">
 </form>
 {% endif %}
+<!-- Scripts -->
 <script type="text/javascript">
 {% if killable %}
 function killServer(){
@@ -158,28 +170,6 @@ function killServer(){
         window.location.href='/?stop';
 }
 {% endif %}
-var inputs = document.querySelectorAll( '.uploadFile' );
-
-Array.prototype.forEach.call( inputs, function( input )
-{
-	var label	 = input.nextElementSibling,
-		labelVal = label.innerHTML;
-
-	input.addEventListener( 'change', function( e )
-	{
-		var fileName = '';
-		if( this.files && this.files.length > 1 )
-			fileName = ( this.getAttribute( 'data-multiple-caption' ) || '' ).replace( '{count}', this.files.length );
-		else {
-			fileName = e.target.value.split("\\").pop();
-		}
-
-		if( fileName )
-			label.querySelector( 'span' ).innerHTML = fileName;
-		else
-			label.innerHTML = labelVal;
-	});
-});
 
 {% if canModify %}
 var form = document.getElementById('fileAction');
@@ -193,6 +183,7 @@ function renameFile(fileName){
         form.newName.value = nname;
         form.submit();
     }
+    return false;
 }
 function copyFile(fileName){
     var nname = prompt('Please enter the name of the duplicate:', fileName);
@@ -204,6 +195,7 @@ function copyFile(fileName){
         form.newName.value = nname;
         form.submit();
     }
+    return false;
 }
 function deleteFile(fileName){
     if(confirm('Are you sure you want to delete file "' + fileName + '"?')){
@@ -212,19 +204,26 @@ function deleteFile(fileName){
         form.file.value = fileName;
         form.submit();
     }
+    return false;
 }
 function newDir(){
     var nname = prompt('Please enter the name for the new directory:');
     
+    var folderPresent = [{% for file in files %}{% if file.is_dir %}'{{ file.name }}',{% endif %}{% endfor %}''];
+    
     if (nname != null && nname != ''){
-        //send back to server new directory request
-        form.action.value = 'newFolder';
-        form.file.value = nname;
-        form.submit();
+        if(folderPresent.includes(nname)){
+            alert('A directory with that name already exists.');
+            return false;
+        }else{
+            //send back to server new directory request
+            form.action.value = 'newFolder';
+            form.file.value = nname;
+            form.submit();
+        }
     }
 }
 {% endif %}
-
 {% if canExecute %}
 var form = document.getElementById('fileAction');
 function executeFile(fileName){
@@ -234,9 +233,9 @@ function executeFile(fileName){
         form.file.value = fileName;
         form.submit();
     }
+    return false;
 }
 {% endif %}
 </script>
-
 </body>
 </html>
