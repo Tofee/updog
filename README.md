@@ -78,9 +78,9 @@ enter the password in the password field.
   - Move (within this directory tree only)
   - Delete
   - Download as a single zip file
-- Breadcrumbs for directory
+~~- Breadcrumbs for directory~~
 - New: Drop files only UI
 - Fix: Name arrows for ascending descending (normal UI)
-- Fix: Order files by name (lite UI)
+~~- Fix: Order files by name (lite UI)~~
 - logFile to dump info into
-- info to show in the webpage (like upload successful, or file deleted etc)
+~~- info to show in the webpage (like upload successful, or file deleted etc)~~
