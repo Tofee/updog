@@ -103,6 +103,9 @@ function uploading(){
                 {% if canModify %}
                 <th>Actions</th> <!-- Actions (Copy, Delete, Rename) -->
                 {% endif %}
+                {% if zipAllow %}
+                <th>Dir Zip</th> <!-- Actions (Copy, Delete, Rename) -->
+                {% endif %}
                 {% if canExecute %}
                 <th></th> <!-- Execute -->
                 {% endif %}
@@ -130,6 +133,13 @@ function uploading(){
                             <a href="#" alt='Delete file' onclick="return deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
                             <a href="#" alt='Rename file' onclick="return renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
                             <a href="#" alt='Copy file' onclick="return copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
+                        {% endif %}
+                    </td>
+                {% endif %}
+                {% if zipAllow %}
+                    <td> <!-- File last modified -->
+                        {% if file.is_dir and zipAllow %}
+                            <a href="/{{ file.rel_path }}?zip" alt='zip directory'>Z</a>
                         {% endif %}
                     </td>
                 {% endif %}
