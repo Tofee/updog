@@ -1,4 +1,4 @@
-![Version 1.5](http://img.shields.io/badge/version-v1.5-green.svg)
+![Version 1.52](http://img.shields.io/badge/version-v1.52-green.svg)
 ![Python 3.8](http://img.shields.io/badge/python-3.8-blue.svg)
 [![MIT License](http://img.shields.io/badge/license-MIT%20License-blue.svg)](https://github.com/s-razoes/updog/blob/master/LICENSE)
 
@@ -24,19 +24,20 @@ Install using pip:
 
 `updog [-d DIRECTORY] [-p PORT] [--password PASSWORD] [--ssl]`
 
-| Argument                            | Description                                      |
-|-------------------------------------|--------------------------------------------------| 
-| -d DIRECTORY, --directory DIRECTORY | Root directory [Default=.]                       | 
-| -p PORT, --port PORT                | Port to serve [Default=9090]                     |
-| --password PASSWORD                 | Use a password to access the page. (No username) |
-| --ssl                               | Enable transport encryption via SSL              |
-| --version                           | Show version                                     |
-| -k                                  | Killable server (from web)                       |
-| -l                                  | Lite UI version                                  |
-| -m                                  | Allow file modification (del, ren, copy, new dir)|
-| -x                                  | Allow file execution                             |
-| -f FILE                             | Serve only specific file                         |
-| -h, --help                          | Show help                                        |
+| Argument                            | Description                                        |
+|-------------------------------------|----------------------------------------------------| 
+| -d DIRECTORY, --directory DIRECTORY | Root directory [Default=.]                         | 
+| -p PORT, --port PORT                | Port to serve [Default=9090]                       |
+| --password PASSWORD                 | Use a password to access the page. (No username)   |
+| --ssl                               | Enable transport encryption via SSL                |
+| --version                           | Show version                                       |
+| -k                                  | Killable server (from web)                         |
+| -l                                  | Lite UI version                                    |
+| -m                                  | Allow file modification (del, ren, copy, new dir)  |
+| -x                                  | Allow file execution                               |
+| -z                                  | Allow download of zipped folders                   |
+| -f FILE                             | Serve only specific file                           |
+| -h, --help                          | Show help                                          |
 
 ## Examples
 
@@ -77,10 +78,10 @@ enter the password in the password field.
 - Select multiple files to:
   - Move (within this directory tree only)
   - Delete
-  - Download as a single zip file
+  - ~~Download as a single zip file~~
 - ~~Breadcrumbs for directory~~
 - New: Drop files only UI
-- Fix: Name arrows for ascending descending (normal UI)
+- Fix: Reintroduce the removed stuff from the normal UI
 - ~~Fix: Order files by name (lite UI)~~
 - logFile to dump info into
 - ~~info to show in the webpage (like upload successful, or file deleted etc)~~
