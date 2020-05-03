@@ -3,6 +3,8 @@ import signal
 import argparse
 import sys
 import shutil
+import zipfile
+import tempfile
 
 from flask import Flask, flash, render_template, send_file, redirect, request, send_from_directory, url_for, abort
 from flask_httpauth import HTTPBasicAuth
@@ -41,6 +43,8 @@ def parse_arguments():
     parser.add_argument('-l', action='store_true', help='Use the UI lite version (cannot search or order columns)')
     parser.add_argument('-k', action='store_true', help='Allow user to kill server')
     parser.add_argument('-x', action='store_true', help='Allow executing files')
+    parser.add_argument('-g', action='store_true', help='Allow gallery mode')
+    parser.add_argument('-z', action='store_true', help='Allow zip directory')
     parser.add_argument('-m', action='store_true', help='Allow file modifications (delete, renames, duplicate, upload, create new folder)')
     parser.add_argument('--version', action='version', version='%(prog)s v'+VERSION)
 
@@ -64,10 +68,22 @@ def serveFile(path, attachment):
     except PermissionError:
         abort(403, 'Read Permission Denied: ' + requested_path)
         
+
+def zipdir(path, zipF, base="."):
+    # zipF is zipfile handle
+    if base == ".":
+        base = path
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            zipF.write(os.path.join(root, file),arcname=os.path.join(root.replace(base, ""), file),compress_type = zipfile.ZIP_DEFLATED)
+        for dir in dirs:
+            zipdir(os.path.join(root,dir), zipF, base)
+
+
 def main():
     args = parse_arguments()
     app = Flask(__name__)
-    app.secret_key = b'_5#y2L"F4Qdfaw#3r2fwrsfjc..65t -1\n\xec]/'
+    app.secret_key = os.urandom(16)
     auth = HTTPBasicAuth()
     global base_directory
     base_directory = args.directory
@@ -114,6 +130,17 @@ def main():
             if os.path.isdir(requested_path):
                 back = get_parent_directory(requested_path, base_directory)
                 is_subdirectory = True
+                
+                if args.z:
+                    if request.args.get('zip') is not None:
+                        tmp = tempfile.NamedTemporaryFile(mode='w+b', suffix='.zip')#,delete=True)
+                        zipf = zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED)
+                        zipdir(requested_path, zipf)
+                        zipf.close()
+                        
+                        success('File zipped: %s' % tmp.name)
+                        
+                        return serveFile(tmp.name, True)
 
             # If file
             elif os.path.isfile(requested_path):
@@ -138,18 +165,24 @@ def main():
                 directory_files = process_files(os.scandir(requested_path), base_directory)
             except PermissionError:
                 abort(403, 'Read Permission Denied: ' + requested_path)
-                
-            #directory_files = sorted(directory_files)
+            
             homeHtml = 'home.html'
             if args.l:
                 homeHtml = 'lite.html'
             
             pathsList=split_path(requested_path, base_directory)
-            
-            return render_template(homeHtml, files=sorted(directory_files, key=sortFiles), back=back,
-                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
+            #sorted(directory_files, key=sortFiles)
+            return render_template(homeHtml, files=directory_files, back=back,
+                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, zipAllow=args.z, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
             return redirect('/')
+
+    #################################################
+    # Send message back and return to previous page #
+    #################################################
+    def returnWithMessage(message):
+        flash(message)
+        return redirect(request.referrer)
 
     ##############################
     # File Actions Functionality #
@@ -163,8 +196,7 @@ def main():
         if request.method == 'POST':
             if 'action' not in request.form or 'path' not in request.form:
                 #invalid path or action
-                flash('Invalid action.')
-                return redirect(request.referrer)
+                return returnWithMessage('Invalid action.')
                 
             filename = secure_filename(request.form['file'])
             full_path = os.path.join(request.form['path'], filename)
@@ -177,8 +209,8 @@ def main():
             if request.form['action'] == 'newFolder' and args.m:
                 if not os.path.exists(full_path):
                     os.mkdir(full_path)
-                    flash('Directory created')
-                return redirect(request.referrer)
+                    return returnWithMessage('Directory created')
+                return returnWithMessage('Folder already exists with that name.')
             
             if not os.path.exists(full_path):
                 abort(404, 'File not found');
@@ -239,9 +271,8 @@ def main():
                     if not os.path.isdir(new_full_path):
                         shutil.copyfile(full_path,new_full_path)
                 flash('Copied file.')
-                return redirect(request.referrer)
             
-                
+            
             return redirect(request.referrer)
 
     #############################
