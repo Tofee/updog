@@ -43,7 +43,6 @@ def parse_arguments():
     parser.add_argument('-l', action='store_true', help='Use the UI lite version (cannot search or order columns)')
     parser.add_argument('-k', action='store_true', help='Allow user to kill server')
     parser.add_argument('-x', action='store_true', help='Allow executing files')
-    parser.add_argument('-g', action='store_true', help='Allow gallery mode')
     parser.add_argument('-z', action='store_true', help='Allow zip directory')
     parser.add_argument('-m', action='store_true', help='Allow file modifications (delete, renames, duplicate, upload, create new folder)')
     parser.add_argument('--version', action='version', version='%(prog)s v'+VERSION)
