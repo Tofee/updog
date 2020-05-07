@@ -107,7 +107,7 @@ function uploading(){
                 <th>Actions</th> <!-- Actions (Copy, Delete, Rename) -->
                 {% endif %}
                 {% if zipAllow %}
-                <th>Dir Zip</th> <!-- Actions (Copy, Delete, Rename) -->
+                <th>Zip</th> <!-- Actions (Copy, Delete, Rename) -->
                 {% endif %}
                 {% if canExecute %}
                 <th></th> <!-- Execute -->
@@ -145,9 +145,7 @@ function uploading(){
                 {% endif %}
                 {% if zipAllow %}
                     <td> <!-- File last modified -->
-                        {% if file.is_dir and zipAllow %}
-                            <a href="/{{ file.rel_path }}?zip" alt='zip directory'>Z</a>
-                        {% endif %}
+                        <a href="/{{ file.rel_path }}?zip" alt='Download as Zip'>Z</a>
                     </td>
                 {% endif %}
                 {% if canExecute %}
