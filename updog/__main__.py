@@ -40,7 +40,7 @@ def parse_arguments():
     parser.add_argument('--password', type=str, default='', help='Use a password to access the page. (No username)')
     parser.add_argument('-file', type=str, default='', help='Restrict to serve specific file')
     parser.add_argument('-ssl', action='store_true', help='Use an encrypted ssl connection(TLS 1.2), if no public/private key pair is sent, one will be generated adhoc')
-    parser.add_argument('--hostname', type=str, default=os.uname().nodename, help='Hostname to use when generating an adhoc SSL connection')
+    parser.add_argument('--hostname', type=str, default='UPDogServer', help='Hostname to use when generating an adhoc SSL connection')
     parser.add_argument('--cert', type=str, default='', help='Location of certificate file to use as public key in SSL connections')
     parser.add_argument('--pKey', type=str, default='', help='Location of file to use as private key in SSL connections')
     parser.add_argument('-l', action='store_true', help='Use the UI lite version (cannot search or order columns)')
