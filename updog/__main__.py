@@ -212,7 +212,7 @@ def main():
             full_path = os.path.join(request.form['path'], filename)
             
             # Prevent access to paths outside of base directory
-            if not is_valid_upload_path(requestedPath, base_directory):
+            if not is_valid_upload_path(request.form['path'], filename, base_directory):
                 flash('Not a valid path.')
                 return redirect(request.referrer)
             
