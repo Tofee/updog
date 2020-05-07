@@ -1,8 +1,9 @@
 import os
-
+from OpenSSL import crypto, SSL
+from pprint import pprint
+from time import gmtime, mktime
 from math import log2
 from time import ctime
-
 
 def is_valid_subpath(relative_directory, base_directory):
     in_question = os.path.abspath(os.path.join(base_directory, relative_directory))
@@ -23,7 +24,8 @@ def get_relative_path(file_path, base_directory):
 def human_readable_file_size(size):
     # Taken from Dipen Panchasara
     # https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
-    _suffixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    _suffixes = ['Bytes', 'KB',
+    'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     order = int(log2(size) / 10) if size else 0
     return '{:.4g} {}'.format(size / (1 << (order * 10)), _suffixes[order])
 
@@ -90,3 +92,27 @@ def split_path(path, base_directory):
         x += 1
     locations[len(locations)-1]=''
     return [locations,pathDic]
+    
+
+def create_self_signed_cert(certFile, keyFile, hostName):
+    # create a key pair
+    k = crypto.PKey()
+    k.generate_key(crypto.TYPE_RSA, 1024)
+
+    # create a self-signed cert
+    cert = crypto.X509()
+    cert.get_subject().C = "PT"
+    cert.get_subject().ST = "Portugal"
+    cert.get_subject().L = "Portugal"
+    cert.get_subject().O = "S-Razoes Lda"
+    cert.get_subject().OU = "S-Razoes Lda"
+    cert.get_subject().CN = hostName
+    cert.set_serial_number(1000)
+    cert.gmtime_adj_notBefore(0)
+    cert.gmtime_adj_notAfter(10*365*24*60*60)
+    cert.set_issuer(cert.get_subject())
+    cert.set_pubkey(k)
+    cert.sign(k, 'sha512')
+
+    open(certFile, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
+    open(keyFile, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
