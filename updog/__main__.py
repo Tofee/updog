@@ -5,6 +5,7 @@ import sys
 import shutil
 import zipfile
 import tempfile
+import ssl
 
 from flask import Flask, flash, render_template, send_file, redirect, request, send_from_directory, url_for, abort
 from flask_httpauth import HTTPBasicAuth
@@ -12,7 +13,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles
+from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert
 from updog.utils.output import error, info, warn, success
 from updog import version as VERSION
 
@@ -35,11 +36,13 @@ def parse_arguments():
     parser.add_argument('-d', '--directory', metavar='DIRECTORY', type=read_write_directory, default=cwd,
                         help='Root directory\n'
                              '[Default=.]')
-    parser.add_argument('-p', '--port', type=int, default=9090,
-                        help='Port to serve [Default=9090]')
+    parser.add_argument('-p', '--port', type=int, default=9090, help='Port to serve [Default=9090]')
     parser.add_argument('--password', type=str, default='', help='Use a password to access the page. (No username)')
     parser.add_argument('-file', type=str, default='', help='Restrict to serve specific file')
-    parser.add_argument('--ssl', action='store_true', help='Use an encrypted connection')
+    parser.add_argument('-ssl', action='store_true', help='Use an encrypted ssl connection(TLS 1.2), if no public/private key pair is sent, one will be generated adhoc')
+    parser.add_argument('--hostname', type=str, default=os.uname().nodename, help='Hostname to use when generating an adhoc SSL connection')
+    parser.add_argument('--cert', type=str, default='', help='Location of certificate file to use as public key in SSL connections')
+    parser.add_argument('--pKey', type=str, default='', help='Location of file to use as private key in SSL connections')
     parser.add_argument('-l', action='store_true', help='Use the UI lite version (cannot search or order columns)')
     parser.add_argument('-k', action='store_true', help='Allow user to kill server')
     parser.add_argument('-x', action='store_true', help='Allow executing files')
@@ -132,17 +135,26 @@ def main():
                 
                 if args.z:
                     if request.args.get('zip') is not None:
-                        tmp = tempfile.NamedTemporaryFile(mode='w+b', suffix='.zip')#,delete=True)
+                        tmp = tempfile.NamedTemporaryFile(mode='w+b', suffix='.zip',delete=True)
                         zipf = zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED)
                         zipdir(requested_path, zipf)
                         zipf.close()
                         
-                        success('File zipped: %s' % tmp.name)
+                        success('Directory zipped: %s' % requested_path)
                         
                         return serveFile(tmp.name, True)
-
             # If file
             elif os.path.isfile(requested_path):
+                if args.z:
+                    if request.args.get('zip') is not None:
+                        tmp = tempfile.NamedTemporaryFile(mode='w+b', suffix='.zip',delete=True)
+                        zipf = zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED)
+                        zipf.write(requested_path,arcname=os.path.basename(requested_path),compress_type = zipfile.ZIP_DEFLATED)
+                        zipf.close()
+                        
+                        success('File zipped: %s' % requested_path)
+                        
+                        return serveFile(tmp.name, True)
 
                 # Check if the view flag is set
                 if request.args.get('view') is None:
@@ -170,7 +182,6 @@ def main():
                 homeHtml = 'lite.html'
             
             pathsList=split_path(requested_path, base_directory)
-            #sorted(directory_files, key=sortFiles)
             return render_template(homeHtml, files=directory_files, back=back,
                                    directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, zipAllow=args.z, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
@@ -197,13 +208,15 @@ def main():
                 #invalid path or action
                 return returnWithMessage('Invalid action.')
                 
-            filename = secure_filename(request.form['file'])
+            filename = request.form['file']
             full_path = os.path.join(request.form['path'], filename)
             
             # Prevent access to paths outside of base directory
-            if not is_valid_upload_path(request.form['path'], base_directory):
+            if not is_valid_upload_path(requestedPath, base_directory):
                 flash('Not a valid path.')
                 return redirect(request.referrer)
+            
+            full_path = os.path.realpath(full_path)
             
             if request.form['action'] == 'newFolder' and args.m:
                 if not os.path.exists(full_path):
@@ -211,12 +224,16 @@ def main():
                     return returnWithMessage('Directory created')
                 return returnWithMessage('Folder already exists with that name.')
             
+            
             if not os.path.exists(full_path):
-                abort(404, 'File not found');
+                abort(404, 'File not found: %s' % full_path);
 
             #execute the file
             if request.form['action'] == 'execute' and args.x:
-                os.system("%s" % full_path)
+                runCommand = 'sh ' + full_path
+                if os.name == 'nt':
+                    runCommand = 'start ' + full_path
+                os.system(runCommand)
                 flash('File executed.')
                 return redirect(request.referrer)
             
@@ -347,7 +364,28 @@ def main():
 
     ssl_context = None
     if args.ssl:
-        ssl_context = 'adhoc'
+        if args.cert != '' and args.pKey != '':
+            if not os.path.exists(args.pKey) or not os.path.exists(args.cert):
+                print()
+                error('Files provided as CERT or PrivKey do not exist')
+            keyFile = args.pKey
+            crtFile = args.cert
+        else:
+            certsPath = os.path.join(app.root_path, 'certs')
+            
+            crtFile = os.path.join(certsPath, 'local.crt')
+            keyFile = os.path.join(certsPath, 'local.key')
+
+            #on the first run, create the file
+            if not os.path.exists(certsPath):
+                os.mkdir(certsPath)
+                hostName = args.hostname
+                create_self_signed_cert(crtFile, keyFile, hostName)
+                success('Certificates created for the first time for %s' % hostName)
+
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
+        ssl_context.load_cert_chain(crtFile, keyFile)
 
     run_simple("0.0.0.0", int(args.port), app, ssl_context=ssl_context)
 
