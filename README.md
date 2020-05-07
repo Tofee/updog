@@ -29,14 +29,17 @@ Install using pip:
 | -d DIRECTORY, --directory DIRECTORY | Root directory [Default=.]                         | 
 | -p PORT, --port PORT                | Port to serve [Default=9090]                       |
 | --password PASSWORD                 | Use a password to access the page. (No username)   |
-| --ssl                               | Enable transport encryption via SSL                |
+| -ssl                                | Enable transport encryption via SSL                |
+| --hostname                          | Hostname to use when generating an adhoc SSL cert  |
+| --cert                              | Certificate file to use as public key in SSL       |
+| --pKey                              | Location of file to use as private key in SSL      |
 | --version                           | Show version                                       |
 | -k                                  | Killable server (from web)                         |
 | -l                                  | Lite UI version                                    |
 | -m                                  | Allow file modification (del, ren, copy, new dir)  |
 | -x                                  | Allow file execution                               |
 | -z                                  | Allow download of zipped folders                   |
-| -f FILE                             | Serve only specific file                           |
+| -f FILE                             | Serve only specific a file                         |
 | -h, --help                          | Show help                                          |
 
 ## Examples
@@ -63,7 +66,11 @@ enter the password in the password field.
 
 **Use an SSL connection:**
 
-`updog --ssl`
+`updog -ssl`
+This is generate a certificate in the application path /certs/
+These can be replaced or invoced in the bash like so:
+`updog -ssl --cert [CRT FILE] --pKey [PRIVATE KEY FILE]`
+
 
 **Lite version with kill button and can manipulate and execute files:**
 
@@ -73,7 +80,8 @@ enter the password in the password field.
 
 
 **TODO**
-- SSL: Accept certificates to use
+- ~~SSL: Accept certificates to use~~
+- Hide full path option
 - Drag and drop (normal UI only)
 - Select multiple files to:
   - Move (within this directory tree only)
