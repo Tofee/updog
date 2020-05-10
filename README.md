@@ -1,4 +1,4 @@
-![Version 1.52](http://img.shields.io/badge/version-v1.52-green.svg)
+![Version 1.53](http://img.shields.io/badge/version-v1.52-green.svg)
 ![Python 3.8](http://img.shields.io/badge/python-3.8-blue.svg)
 [![MIT License](http://img.shields.io/badge/license-MIT%20License-blue.svg)](https://github.com/s-razoes/updog/blob/master/LICENSE)
 
@@ -39,6 +39,7 @@ Install using pip:
 | -m                                  | Allow file modification (del, ren, copy, new dir)  |
 | -x                                  | Allow file execution                               |
 | -z                                  | Allow download of zipped folders                   |
+| -g                                  | Allow gallery mode                                 |
 | -f FILE                             | Serve only specific a file                         |
 | -h, --help                          | Show help                                          |
 
@@ -82,14 +83,14 @@ These can be replaced or invoced in the bash like so:
 **TODO**
 - ~~SSL: Accept certificates to use~~
 - Hide full path option
-- Drag and drop (normal UI only)
+- ~~Drag and drop (normal UI only)~~
 - Select multiple files to:
   - Move (within this directory tree only)
   - Delete
   - ~~Download as a single zip file~~
 - ~~Breadcrumbs for directory~~
-- New: Drop files only UI
-- Fix: Reintroduce the removed stuff from the normal UI
+-~~New: Drop files only UI~~
+- Improve gallery mode
 - ~~Fix: Order files by name (lite UI)~~
 - logFile to dump info into
 - ~~info to show in the webpage (like upload successful, or file deleted etc)~~
