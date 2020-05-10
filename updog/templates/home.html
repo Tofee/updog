@@ -38,9 +38,26 @@ function uploading(){
 }
 {% endif %}
 </script>
-<body>
-<div class="conn">
 
+<style>
+#conn{
+margin: 0 !important;
+padding: 0 !important;
+}
+#conn.highlight {
+  background-color: red;
+}
+#progress-bar{
+width: 100%;
+height: 5px;
+margin-top: 0;
+}
+</style>
+
+
+<body>
+<div class="conn" id="drop-area">
+<progress id="progress-bar" max=100 value=0></progress>
     <!-- Header -->
     <header id="header" class="d-flex align_item_center">
         <div onclick="document.location='/'" class="logo_p">
@@ -50,6 +67,7 @@ function uploading(){
         <div class="heading_title_p">
             <h2>{% for i in range(0,len) %}{% if directories[i] != '' %}<a href="{{ directories[i] }}" style="text-decoration: underline;">{{paths[i]}}</a>{% else %}{{paths[i]}}{% endif %}/{% endfor %}</h2>
         </div>
+		
     </header>
 
     {% if canModify %}
@@ -85,6 +103,7 @@ function uploading(){
     </section>
     {% endif %}
 
+<span id='status-text'></span>
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     {% for message in messages %}
@@ -195,8 +214,110 @@ function killServer(){
         window.location.href='/?stop';
 }
 {% endif %}
-
 {% if canModify %}
+
+// ************************ Drag and drop ***************** //
+let dropArea = document.getElementById("drop-area")
+
+// Prevent default drag behaviors
+;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, preventDefaults, false)   
+  document.body.addEventListener(eventName, preventDefaults, false)
+})
+
+// Highlight drop area when item is dragged over it
+;['dragenter', 'dragover'].forEach(eventName => {
+  dropArea.addEventListener(eventName, highlight, false)
+})
+
+;['dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, unhighlight, false)
+})
+
+// Handle dropped files
+dropArea.addEventListener('drop', handleDrop, false)
+
+function preventDefaults (e) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function highlight(e) {
+  dropArea.classList.add('highlight')
+}
+
+function unhighlight(e) {
+  dropArea.classList.remove('active')
+}
+
+function handleDrop(e) {
+  var dt = e.dataTransfer
+  var files = dt.files
+
+  handleFiles(files)
+}
+
+let uploadProgress = []
+let progressBar = document.getElementById('progress-bar')
+let statusText = document.getElementById('status-text')
+
+progressBar.style.visibility = 'hidden'
+
+function initializeProgress(numFiles) {
+  progressBar.style.visibility = ''
+  progressBar.value = 0
+  uploadProgress = []
+
+  statusText.innerText = ''
+  
+  for(let i = numFiles; i > 0; i--) {
+    uploadProgress.push(0)
+  }
+}
+
+function updateProgress(fileNumber, percent) {
+	uploadProgress[fileNumber] = percent
+	let total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length
+	progressBar.value = total
+	if(progressBar.value == 100){
+		setTimeout(function(){window.location.reload(1);}, 2000);
+	}
+}
+
+function handleFiles(files) {
+  files = [...files]
+  initializeProgress(files.length)
+  files.forEach(uploadFile)
+}
+
+function uploadFile(file, i) {
+	var url = '/upload'
+	var xhr = new XMLHttpRequest()
+	var formData = new FormData()
+	xhr.open('POST', url, true)
+	xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
+
+	// Update progress (can be used to show progress indicator)
+	xhr.upload.addEventListener("progress", function(e) {
+		updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
+	})
+
+	xhr.addEventListener('readystatechange', function(e) {
+		if (xhr.readyState == 4 && xhr.status == 200) {
+		  updateProgress(i, 100) // <- Add this
+		  statusText.innerText += file.name + ' sucessfully uploaded.\n'
+		}
+		else if (xhr.readyState == 4 && xhr.status != 200) {
+		  // Error. Inform the user
+		  statusText.innerText += file.name + ' error uploading.\n'
+		}
+	});
+	formData.append('file', file);
+	formData.append('path', '{{ directory }}');
+	xhr.send(formData);
+}
+//*********** drag drop ****
+
 var form = document.getElementById('fileAction');
 function renameFile(fileName){
     var nname = prompt('Please enter a new name:', fileName);

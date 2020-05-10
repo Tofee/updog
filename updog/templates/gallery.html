@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- Title -->
+    <title>Gallery {{ paths[len-1] }}</title>
+</head>
+
+<style>
+div.gallery {
+  margin: 5px;
+  border: 1px solid #ccc;
+  float: left;
+  width: 180px;
+}
+
+div.gallery:hover {
+  border: 1px solid #777;
+}
+
+div.gallery img {
+  width: 100%;
+  height: auto;
+}
+
+div.desc {
+  padding: 15px;
+  text-align: center;
+}
+</style>
+
+<body>
+
+{% for file in files %}
+{% if not file.is_dir %}
+<div class="gallery">
+  <a target="_blank" href="/{{ file.rel_path }}?view">
+	<img src="/{{ file.rel_path }}?view" alt="{{ file.rel_path }}" width="600" height="400">
+  </a>
+</div>
+{% endif %}
+{% endfor %}
+
+    <footer>
+        <p>
+            updog v{{ version }}
+        </p>
+    </footer>
+
+</body>
+</html>

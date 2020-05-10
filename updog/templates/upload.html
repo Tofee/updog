@@ -1,0 +1,166 @@
+<html>
+<style>
+body {
+  font-family: sans-serif;
+}
+a {
+  color: #369;
+}
+.note {
+  width: 500px;
+  margin: 50px auto;
+  font-size: 1.1em;
+  color: #333;
+  text-align: justify;
+}
+#drop-area {
+  border: 2px dashed #ccc;
+  border-radius: 20px;
+  height: 80vh;
+  margin: auto;
+  padding: 20px;
+}
+#drop-area.highlight {
+  border-color: purple;
+}
+p {
+  margin-top: 0;
+}
+.my-form {
+  margin-bottom: 10px;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px;
+  background: #ccc;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.button:hover {
+  background: #ddd;
+}
+#progress-bar{
+width: 100%;
+height: 5px;
+}
+#fileElem {
+  display: none;
+}
+</style>
+<body>
+<div id="drop-area">
+  <form class="my-form">
+    <p>Upload multiple files with the file dialog or by dragging them onto the dashed region</p>
+    <input type="file" id="fileElem" multiple onchange="handleFiles(this.files)">
+    <label class="button" for="fileElem">Select some files</label>
+  </form>
+  <progress id="progress-bar" max=100 value=0></progress>
+  <p id="status-text" /></div>
+</div>
+</body>
+
+<script type="text/javascript">
+// ************************ Drag and drop ***************** //
+let dropArea = document.getElementById("drop-area")
+
+// Prevent default drag behaviors
+;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, preventDefaults, false)   
+  document.body.addEventListener(eventName, preventDefaults, false)
+})
+
+// Highlight drop area when item is dragged over it
+;['dragenter', 'dragover'].forEach(eventName => {
+  dropArea.addEventListener(eventName, highlight, false)
+})
+
+;['dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, unhighlight, false)
+})
+
+// Handle dropped files
+dropArea.addEventListener('drop', handleDrop, false)
+
+function preventDefaults (e) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function highlight(e) {
+  dropArea.classList.add('highlight')
+}
+
+function unhighlight(e) {
+  dropArea.classList.remove('active')
+}
+
+function handleDrop(e) {
+  var dt = e.dataTransfer
+  var files = dt.files
+
+  handleFiles(files)
+}
+
+let uploadProgress = []
+let progressBar = document.getElementById('progress-bar')
+let statusText = document.getElementById('status-text')
+
+progressBar.style.visibility = 'hidden'
+
+function initializeProgress(numFiles) {
+  progressBar.style.visibility = ''
+  progressBar.value = 0
+  uploadProgress = []
+
+  statusText.innerText = ''
+  
+  for(let i = numFiles; i > 0; i--) {
+    uploadProgress.push(0)
+  }
+}
+
+function updateProgress(fileNumber, percent) {
+	uploadProgress[fileNumber] = percent
+	let total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length
+	progressBar.value = total
+	if(progressBar.value == 100 || progressBar.value == 0)
+		progressBar.style.visibility = 'hidden'
+	else
+		progressBar.style.visibility = ''
+}
+
+function handleFiles(files) {
+  files = [...files]
+  initializeProgress(files.length)
+  files.forEach(uploadFile)
+}
+
+function uploadFile(file, i) {
+	var url = '/upload'
+	var xhr = new XMLHttpRequest()
+	var formData = new FormData()
+	xhr.open('POST', url, true)
+	xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
+
+	// Update progress (can be used to show progress indicator)
+	xhr.upload.addEventListener("progress", function(e) {
+		updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
+	})
+
+	xhr.addEventListener('readystatechange', function(e) {
+		if (xhr.readyState == 4 && xhr.status == 200) {
+		  updateProgress(i, 100) // <- Add this
+		  statusText.innerText += file.name + ' sucessfully uploaded.\n'
+		}
+		else if (xhr.readyState == 4 && xhr.status != 200) {
+		  // Error. Inform the user
+		  statusText.innerText += file.name + ' error uploading.\n'
+		}
+	});
+	formData.append('file', file);
+	xhr.send(formData);
+}
+</script>
+<html>
