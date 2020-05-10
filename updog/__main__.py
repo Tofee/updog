@@ -47,6 +47,8 @@ def parse_arguments():
     parser.add_argument('-k', action='store_true', help='Allow user to kill server')
     parser.add_argument('-x', action='store_true', help='Allow executing files')
     parser.add_argument('-z', action='store_true', help='Allow zip directory')
+    parser.add_argument('-u', action='store_true', help='Upload mode only')
+    parser.add_argument('-g', action='store_true', help='Allow gallery mode')
     parser.add_argument('-m', action='store_true', help='Allow file modifications (delete, renames, duplicate, upload, create new folder)')
     parser.add_argument('--version', action='version', version='%(prog)s v'+VERSION)
 
@@ -117,6 +119,10 @@ def main():
                 print()
                 error('User requested kill server!')
 
+        #only upload 
+        if args.u:
+            return render_template('upload.html', version=VERSION, killable=args.k)
+
         #only serving a specific file option
         if fileToServe:
             return serveFile(fileToServe, False)
@@ -181,8 +187,13 @@ def main():
             if args.l:
                 homeHtml = 'lite.html'
             
+            if args.g:
+                if request.args.get('gallery') is not None:
+                    info('gallery mode')
+                    homeHtml = 'gallery.html'
+            
             pathsList=split_path(requested_path, base_directory)
-            return render_template(homeHtml, files=directory_files, back=back,
+            return render_template(homeHtml, files=directory_files, back=back, galleryAllow=args.g,
                                    directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, zipAllow=args.z, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
             return redirect('/')
@@ -200,7 +211,8 @@ def main():
     @app.route('/fileAction', methods=['POST'])
     @auth.login_required
     def fileAction():
-        if fileToServe:
+        #if it's upload only or server single file only, accept no file action
+        if fileToServe or args.u:
             abort(403, 'Permission denied')
             
         if request.method == 'POST':
@@ -301,16 +313,18 @@ def main():
             abort(403, 'Permission denied')
             
         #only if file modifications are allowed
-        if not args.m:
+        if not args.m and not args.u:
             return redirect(request.referrer)
             
         if request.method == 'POST':
-
             # No file part - needs to check before accessing the files['file']
             if 'file' not in request.files:
                 return redirect(request.referrer)
-
-            path = request.form['path']
+                
+            if 'path' not in request.form or request.form['path'] == '' or request.form['path'] == '.' or request.form['path'] == '/':
+                path = base_directory
+            else:
+                path = request.form['path']
             # Prevent file upload to paths outside of base directory
             if not is_valid_upload_path(path, base_directory):
                 return redirect(request.referrer)
@@ -322,10 +336,17 @@ def main():
                     return redirect(request.referrer)
 
                 # Assuming all is good, process and save out the file
-                # This assumes the user wanted to overwrite the file
                 if file:
                     filename = secure_filename(file.filename)
                     full_path = os.path.join(path, filename)
+                    
+                    #if it's upload UI only, and there's already a file with that name, change name
+                    if args.u:
+                        while os.path.exists(full_path):
+                            filename = 'cp.' + filename
+                            full_path = os.path.join(path, filename)
+
+                    # if not Upload only then it assumes the user wanted to overwrite the file
                     try:
                         file.save(full_path)
                     except PermissionError:
