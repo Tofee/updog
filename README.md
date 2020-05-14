@@ -87,10 +87,13 @@ These can be replaced or invoced in the bash like so:
 - Select multiple files to:
   - Move (within this directory tree only)
   - Delete
-  - ~~Download as a single zip file~~
+  - Download as a single zip file
 - ~~Breadcrumbs for directory~~
--~~New: Drop files only UI~~
-- Improve gallery mode
+- ~~New: Drop files only UI~~
+- Fix: gallery mode
 - ~~Fix: Order files by name (lite UI)~~
 - logFile to dump info into
 - ~~info to show in the webpage (like upload successful, or file deleted etc)~~
+- profiles (user/passwords; permissions; HTTP headers)
+- fix pop-up messages
+- NEW: search function
