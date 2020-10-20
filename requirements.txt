@@ -4,3 +4,9 @@ flask_httpauth
 werkzeug
 pyopenssl
 termcolor
+colored
+cprint
+zeroconf
+IPVersion
+ServiceInfo
+Zeroconf

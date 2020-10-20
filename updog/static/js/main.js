@@ -13,6 +13,11 @@ $(document).ready(function () {
 	});
 });
 
+function killServer(){
+    if(confirm('Are you sure you want to terminate the updog server?'))
+        window.location.href='/?stop';
+}
+
 var inputs = document.querySelectorAll( '.uploadFile' );
 
 Array.prototype.forEach.call( inputs, function( input )

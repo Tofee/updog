@@ -1,11 +1,11 @@
 import os
 import signal
 import argparse
-import sys
 import shutil
 import zipfile
 import tempfile
 import ssl
+import logging
 
 from flask import Flask, flash, render_template, send_file, redirect, request, send_from_directory, url_for, abort
 from flask_httpauth import HTTPBasicAuth
@@ -13,12 +13,12 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert
-from updog.utils.output import error, info, warn, success
+from utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
+from utils.output import error, info, warn, success
 from updog import version as VERSION
+from utils.qrcode import ErrorCorrectLevel, QRCode
+from utils.utils import get_ip, register_service, get_service_info
 
-#extentions to open as plain text
-extentionsAsTxt = ['', '.log', '.txt', '.sh', '.ini', '.bat', '.py', '.sql', '.ps1']
 
 def read_write_directory(directory):
     if os.path.exists(directory):
@@ -33,10 +33,10 @@ def read_write_directory(directory):
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='updog')
     cwd = os.getcwd()
-    parser.add_argument('-d', '--directory', metavar='DIRECTORY', type=read_write_directory, default=cwd,
+    parser.add_argument('--directory', metavar='DIRECTORY', type=read_write_directory, default=cwd,
                         help='Root directory\n'
                              '[Default=.]')
-    parser.add_argument('-p', '--port', type=int, default=9090, help='Port to serve [Default=9090]')
+    parser.add_argument('--port', type=int, default=8090, help='Port to serve [Default=9090]')
     parser.add_argument('--password', type=str, default='', help='Use a password to access the page. (No username)')
     parser.add_argument('-file', type=str, default='', help='Restrict to serve specific file')
     parser.add_argument('-ssl', action='store_true', help='Use an encrypted ssl connection(TLS 1.2), if no public/private key pair is sent, one will be generated adhoc')
@@ -44,12 +44,15 @@ def parse_arguments():
     parser.add_argument('--cert', type=str, default='', help='Location of certificate file to use as public key in SSL connections')
     parser.add_argument('--pKey', type=str, default='', help='Location of file to use as private key in SSL connections')
     parser.add_argument('-l', action='store_true', help='Use the UI lite version (cannot search or order columns)')
+    parser.add_argument('-g', action='store_true', help='Allow gallery mode')
     parser.add_argument('-k', action='store_true', help='Allow user to kill server')
     parser.add_argument('-x', action='store_true', help='Allow executing files')
     parser.add_argument('-z', action='store_true', help='Allow zip directory')
     parser.add_argument('-u', action='store_true', help='Upload mode only')
-    parser.add_argument('-g', action='store_true', help='Allow gallery mode')
     parser.add_argument('-m', action='store_true', help='Allow file modifications (delete, renames, duplicate, upload, create new folder)')
+    parser.add_argument('-q', action='store_true', help='Show QR Code in terminal when ready')
+    parser.add_argument('--mc', type=str, default='', help='Enable Multicast, name to cast')
+    parser.add_argument('--logFile', type=str, default='', help='Log requests to file, file name')
     parser.add_argument('--version', action='version', version='%(prog)s v'+VERSION)
 
     args = parser.parse_args()
@@ -60,17 +63,16 @@ def parse_arguments():
     return args
 
 def serveFile(path, attachment):
-    # Check if file extension
-    (filename, extension) = os.path.splitext(path)
-    if extension.lower() in extentionsAsTxt:
-        mimetype = 'text/plain'
-    else:
-        mimetype = None
+    mimetype = getMime(path)
     
     try:
-        return send_file(path, mimetype=mimetype, as_attachment=attachment)
+        #TODO configurable response headers
+        response = send_file(path, mimetype=mimetype, as_attachment=attachment)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+        #end of TODO
     except PermissionError:
-        abort(403, 'Read Permission Denied: ' + requested_path)
+        abort(403, 'Read Permission Denied!')
         
 
 def zipdir(path, zipF, base="."):
@@ -179,7 +181,7 @@ def main():
         if os.path.exists(requested_path):
             # Read the files
             try:
-                directory_files = process_files(os.scandir(requested_path), base_directory)
+                directory_files = process_files(os.scandir(requested_path), base_directory, imageOnly=(args.g and request.args.get('gallery') is not None))
             except PermissionError:
                 abort(403, 'Read Permission Denied: ' + requested_path)
             
@@ -238,7 +240,7 @@ def main():
             
             
             if not os.path.exists(full_path):
-                abort(404, 'File not found: %s' % full_path);
+                abort(404, 'File not found: %s' % full_path)
 
             #execute the file
             if request.form['action'] == 'execute' and args.x:
@@ -258,7 +260,7 @@ def main():
             if request.form['action'] == 'delete':
                 #if is file
                 if os.path.isfile(full_path):
-                    os.remove(full_path);
+                    os.remove(full_path)
                 else: #if is directory
                     shutil.rmtree(full_path)
                 flash('Deleted.')
@@ -314,6 +316,7 @@ def main():
             
         #only if file modifications are allowed
         if not args.m and not args.u:
+            info('Attempt to upload file withou permissions')
             return redirect(request.referrer)
             
         if request.method == 'POST':
@@ -348,7 +351,9 @@ def main():
 
                     # if not Upload only then it assumes the user wanted to overwrite the file
                     try:
+                        info('File upload: %s' % full_path)
                         file.save(full_path)
+                        success('Uploaded')
                     except PermissionError:
                         abort(403, 'Write Permission Denied: ' + full_path)
 
@@ -383,6 +388,11 @@ def main():
         error('Exiting!')
     signal.signal(signal.SIGINT, handler)
 
+    if args.q:
+        localIp = get_ip() # '0.0.0.0'
+    else:
+        localIp = '0.0.0.0'
+    
     ssl_context = None
     if args.ssl:
         if args.cert != '' and args.pKey != '':
@@ -408,7 +418,41 @@ def main():
 
         ssl_context.load_cert_chain(crtFile, keyFile)
 
-    run_simple("0.0.0.0", int(args.port), app, ssl_context=ssl_context)
+        protocol = 'https://'
+        url = protocol + localIp
+        if args.port != 443:
+            url = url + ":" + str(args.port)
+    else:
+        protocol = 'http://'
+        url = protocol + localIp
+        if args.port != 80:
+            url = url + ":" + str(args.port)
+    
+    #show QRCode in console
+    if args.q:
+        qr = QRCode.getMinimumQRCode(url, ErrorCorrectLevel.M)
+        qr.setErrorCorrectLevel(ErrorCorrectLevel.M)
+        qr.make()
+        qr.printQr()
+        
+    #multicast-dns
+    if args.mc:
+        infoMulticast = get_service_info(args.mc)
+        if infoMulticast is None:
+            register_service(args.mc, args.port)
+            success('Registered Multicast ' + protocol + args.mc + '.local')
+        else:
+            error('Multicast ' + args.mc + ' already registered.')
+    
+    #handle logs
+    logger = logging.getLogger('werkzeug')
+    if args.logFile:
+        fileHandlerLog = logging.FileHandler(args.logFile, 'w')
+        logger.addHandler(fileHandlerLog)
+
+    print(localIp + ' - ' + str(args.port))
+    # localIp = '127.0.0.1'
+    run_simple(localIp, args.port, app, ssl_context=ssl_context)
 
 
 if __name__ == '__main__':

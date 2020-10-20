@@ -68,7 +68,6 @@ function uploading(){
                 <input type="file" name="file" id="file" 
                        data-multiple-caption="{count} files selected" multiple/>
                 
-                </label>
                 <input type="hidden" name="path" value="{{ directory }}">
             </div>
             <!-- -- Upload Btn -- -->
@@ -130,23 +129,23 @@ function uploading(){
                 {% if canModify %}
                     <td> <!-- File last modified -->
                         {% if file.can_write %}
-                            <a href="#" alt='Delete file' onclick="return deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
-                            <a href="#" alt='Rename file' onclick="return renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
-                            <a href="#" alt='Copy file' onclick="return copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
+                            <a href="#" onclick="return deleteFile('{{ file.name }}')">Del</a> <!-- delete -->
+                            <a href="#" onclick="return renameFile('{{ file.name }}')">Ren</a> <!-- rename -->
+                            <a href="#" onclick="return copyFile('{{ file.name }}')">Cp</a> <!-- copy -->
                         {% endif %}
                     </td>
                 {% endif %}
                 {% if zipAllow %}
                     <td> <!-- File last modified -->
                         {% if file.is_dir and zipAllow %}
-                            <a href="/{{ file.rel_path }}?zip" alt='zip directory'>Z</a>
+                            <a href="/{{ file.rel_path }}?zip" >Z</a>
                         {% endif %}
                     </td>
                 {% endif %}
                 {% if canExecute %}
                     <td>
                         {% if file.can_execute %}
-                            <a href="#" alt='Execute file' onclick="return executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
+                            <a href="#" onclick="return executeFile('{{ file.name }}')">Exe</a> <!-- EXECUTE -->
                         {% endif %}
                     </td>
                 {% endif %}

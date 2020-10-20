@@ -37,6 +37,15 @@ function uploading(){
     return true;
 }
 {% endif %}
+function pop(div) {
+	document.getElementById(div).style.display='block';
+	document.getElementById('iframeGallery').src = window.location.href + '?gallery';
+	return false;
+}
+function hide(div) {
+	document.getElementById(div).style.display='none';
+	return false;
+}
 </script>
 
 <style>
@@ -52,10 +61,43 @@ width: 100%;
 height: 5px;
 margin-top: 0;
 }
+.parentDisable {
+	z-index:999;
+	width:100%;
+	height:100%;
+	display:none;
+	position:absolute;
+	top:0;
+	left:0;
+	/* Fallback for web browsers that doesn't support RGBa */
+	background: rgb(0, 0, 0);
+	/* RGBa with 0.6 opacity */
+	background: rgba(0, 0, 0, 0.6);
+	/* For IE 5.5 - 7*/
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
+	/* For IE 8*/
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
+}
+.popin {
+	width:90%;
+	height:80%;
+	margin: 0 auto;
+	color: #000;
+	background-color: #fff;
+}
 </style>
 
 
 <body>
+
+<div id="pop1" class="parentDisable">
+		<div class="popin">
+			<a href="#" onClick="return hide('pop1')">x</a>
+			<iframe id='iframeGallery' url=".?gallery" height="100%" width="100%">
+			</iframe>
+		</div>
+	</div>
+
 <div class="conn" id="drop-area">
 <progress id="progress-bar" max=100 value=0></progress>
     <!-- Header -->
@@ -112,6 +154,7 @@ margin-top: 0;
   {% endif %}
 {% endwith %}
 
+<a href="#" onClick="return pop('pop1')">popin 1</a>
 
     <!-- Table -->
     <section class="table_p table-responsive">

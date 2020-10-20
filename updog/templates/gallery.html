@@ -36,19 +36,6 @@ div.desc {
 
 {% for file in files %}
 {% if not file.is_dir %}
-<div class="gallery">
-  <a target="_blank" href="/{{ file.rel_path }}?view">
-	<img src="/{{ file.rel_path }}?view" alt="{{ file.rel_path }}" width="600" height="400">
-  </a>
-</div>
-{% endif %}
-{% endfor %}
-
-    <footer>
-        <p>
-            updog v{{ version }}
-        </p>
-    </footer>
-
-</body>
-</html>
+<div class="gallery"><a target="_blank" href="/{{ file.rel_path }}?view"><img src="/{{ file.rel_path }}?view" alt="{{ file.rel_path }}" width="600" height="400">{{ file.name }}</a></div>
+{% endif %}{% endfor %}
+</body></html>

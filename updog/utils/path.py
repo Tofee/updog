@@ -1,9 +1,8 @@
 import os
-from OpenSSL import crypto, SSL
-from pprint import pprint
-from time import gmtime, mktime
+from OpenSSL import crypto
 from math import log2
 from time import ctime
+
 
 def is_valid_subpath(relative_directory, base_directory):
     in_question = os.path.abspath(os.path.join(base_directory, relative_directory))
@@ -29,8 +28,12 @@ def human_readable_file_size(size):
     order = int(log2(size) / 10) if size else 0
     return '{:.4g} {}'.format(size / (1 << (order * 10)), _suffixes[order])
 
+#extentions to show in gallery mode
+imageFileExtensions = ['.jpg','.jpeg','.gif','.bmp','.ico','.png']
+#extentions to open as plain text
+extentionsAsTxt = ['', '.log', '.txt', '.sh', '.ini', '.bat', '.py', '.sql', '.ps1']
 
-def process_files(directory_files, base_directory):
+def process_files(directory_files, base_directory, imageOnly=False):
     files = []
     for file in directory_files:
         relPath = get_relative_path(file.path, base_directory)
@@ -40,6 +43,10 @@ def process_files(directory_files, base_directory):
             canExecute = False
             canWrite = os.access(relPath, os.W_OK)
         else:
+            if imageOnly:
+                (filename, extension) = os.path.splitext(file.path)
+                if extension.lower() not in imageFileExtensions:
+                    continue
             size = human_readable_file_size(file.stat().st_size)
             size_sort = file.stat().st_size
             canExecute = os.access(relPath, os.X_OK)
@@ -57,8 +64,19 @@ def process_files(directory_files, base_directory):
         })
     return files
 
+
+def getMime(path):
+    (filename, extension) = os.path.splitext(path)
+    if extension.lower() in extentionsAsTxt:
+        return 'text/plain'
+    else:
+        return None
+
+
+
 def sortFiles(i):
     return i['name']
+
 
 def get_parent_directory(path, base_directory):
     difference = get_relative_path(path, base_directory)
@@ -68,6 +86,7 @@ def get_parent_directory(path, base_directory):
     else:
         return '/'.join(difference_fields[:-1])
 
+
 def split_path(path, base_directory):
     if path == '' or path == '/' or path == base_directory:
         return [[''],[base_directory]]
@@ -76,7 +95,7 @@ def split_path(path, base_directory):
         path, folder = os.path.split(path)
         
         pathDic.append(folder)
-        #locations.append(folder)
+        # locations.append(folder)
         if path == base_directory or path == '' or path =='/':
             break
             
@@ -84,7 +103,7 @@ def split_path(path, base_directory):
     locations=['/']
     pathDic.reverse()
     currentPath = ''
-    #ignore the base directory
+    # ignore the base directory
     x = 1
     while x < len(pathDic):
         currentPath += pathDic[x] + '/'
@@ -112,7 +131,7 @@ def create_self_signed_cert(certFile, keyFile, hostName):
     cert.gmtime_adj_notAfter(10*365*24*60*60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
-    cert.sign(k, 'sha512')
+    cert.sign(k, b'sha512')
 
     open(certFile, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
     open(keyFile, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
