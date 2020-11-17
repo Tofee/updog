@@ -27,7 +27,7 @@ Install using pip:
 | Argument                            | Description                                        |
 |-------------------------------------|----------------------------------------------------| 
 | -d DIRECTORY, --directory DIRECTORY | Root directory [Default=.]                         | 
-| -p PORT, --port PORT                | Port to serve [Default=9090]                       |
+| --port PORT                         | Port to serve [Default=9090]                       |
 | --password PASSWORD                 | Use a password to access the page. (No username)   |
 | -ssl                                | Enable transport encryption via SSL                |
 | --hostname                          | Hostname to use when generating an adhoc SSL cert  |
@@ -40,7 +40,11 @@ Install using pip:
 | -x                                  | Allow file execution                               |
 | -z                                  | Allow download of zipped folders                   |
 | -g                                  | Allow gallery mode                                 |
-| -f FILE                             | Serve only specific a file                         |
+| -q                                  | Show QR code in console when serving               |
+| -u                                  | Upload mode only                                   |
+| --file                              | Serve only specific a file, file name              |
+| --mc                                | Enable Multicast, name to cast                     |
+| --logFile                           | Log requests to file, file name                    |
 | -h, --help                          | Show help                                          |
 
 ## Examples
@@ -92,7 +96,7 @@ These can be replaced or invoced in the bash like so:
 - ~~New: Drop files only UI~~
 - Fix: gallery mode
 - ~~Fix: Order files by name (lite UI)~~
-- logFile to dump info into
+- ~~logFile to dump info into~~
 - ~~info to show in the webpage (like upload successful, or file deleted etc)~~
 - profiles (user/passwords; permissions; HTTP headers)
 - fix pop-up messages

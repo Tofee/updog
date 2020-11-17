@@ -10,12 +10,12 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='updog',
     version=updog.version,
-    url='https://github.com/sc0tfree/updog',
+    url='https://github.com/s-razoes/updog',
     # GitHub releases in format "updog-X.Y"
-    download_url = 'https://github.com/sc0tfree/updog/archive/updog-' + updog.version + '.tar.gz',
+    download_url = 'https://github.com/s-razoes/updog/archive/updog-' + updog.version + '.tar.gz',
     license='MIT',
-    author='sc0tfree',
-    author_email='henry@sc0tfree.com',
+    author='s-razoes',
+    author_email='srzgtfo@gmail.com',
     description='Updog is a replacement for Python\'s SimpleHTTPServer. '
                 'It allows uploading and downloading via HTTP/S, can set '
                 'ad hoc SSL certificates and use http basic auth.',
@@ -55,6 +55,10 @@ setup(
         'flask',
         'flask_httpauth',
         'werkzeug',
-        'pyopenssl'
+        'pyopenssl',
+        'termcolor',
+        'zeroconf',
+        'colored',
+        'cprint'
     ],
 )

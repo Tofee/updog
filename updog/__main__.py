@@ -13,11 +13,11 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
-from utils.output import error, info, warn, success
+from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
+from updog.utils.output import error, info, warn, success
 from updog import version as VERSION
-from utils.qrcode import ErrorCorrectLevel, QRCode
-from utils.utils import get_ip, register_service, get_service_info
+from updog.utils.qrcode import ErrorCorrectLevel, QRCode
+from updog.utils.utils import get_ip, register_service, get_service_info
 
 
 def read_write_directory(directory):
@@ -38,7 +38,7 @@ def parse_arguments():
                              '[Default=.]')
     parser.add_argument('--port', type=int, default=8090, help='Port to serve [Default=9090]')
     parser.add_argument('--password', type=str, default='', help='Use a password to access the page. (No username)')
-    parser.add_argument('-file', type=str, default='', help='Restrict to serve specific file')
+    parser.add_argument('--file', type=str, default='', help='Restrict to serve specific file')
     parser.add_argument('-ssl', action='store_true', help='Use an encrypted ssl connection(TLS 1.2), if no public/private key pair is sent, one will be generated adhoc')
     parser.add_argument('--hostname', type=str, default='UPDogServer', help='Hostname to use when generating an adhoc SSL connection')
     parser.add_argument('--cert', type=str, default='', help='Location of certificate file to use as public key in SSL connections')
