@@ -1,4 +1,4 @@
-![Version 1.54](http://img.shields.io/badge/version-v1.53-green.svg)
+![Version 1.55](http://img.shields.io/badge/version-v1.55-green.svg)
 ![Python 3.8](http://img.shields.io/badge/python-3.8-blue.svg)
 [![MIT License](http://img.shields.io/badge/license-MIT%20License-blue.svg)](https://github.com/s-razoes/updog/blob/master/LICENSE)
 
@@ -7,7 +7,7 @@
 </p>
 
 Updog is a replacement for Python's `SimpleHTTPServer`. 
-It allows uploading, downloading, folder manipulation and executions via HTTP/S, 
+It allows uploading, downloading, folder/file manipulation and execution via HTTP/S, 
 can set ad hoc SSL certificates and use HTTP basic auth.
 
 <p align="center">

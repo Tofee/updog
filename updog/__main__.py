@@ -13,11 +13,11 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
-from updog.utils.output import error, info, warn, success
+from utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
+from utils.output import error, info, warn, success
 from updog import version as VERSION
-from updog.utils.qrcode import ErrorCorrectLevel, QRCode
-from updog.utils.utils import get_ip, register_service, get_service_info
+from utils.qrcode import ErrorCorrectLevel, QRCode
+from utils.utils import get_ip, register_service, get_service_info
 
 
 def read_write_directory(directory):
@@ -193,8 +193,8 @@ def main():
                 if request.args.get('gallery') is not None:
                     info('gallery mode')
                     homeHtml = 'gallery.html'
-            
-            pathsList=split_path(requested_path, base_directory)
+            requested_path = requested_path.replace('\\', '/')
+            pathsList = split_path(requested_path, base_directory)
             return render_template(homeHtml, files=directory_files, back=back, galleryAllow=args.g,
                                    directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, zipAllow=args.z, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
