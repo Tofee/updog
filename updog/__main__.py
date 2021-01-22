@@ -13,11 +13,11 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.serving import run_simple
 
-from utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
-from utils.output import error, info, warn, success
+from updog.utils.path import is_valid_subpath, is_valid_upload_path, get_parent_directory, process_files, split_path, sortFiles, create_self_signed_cert, getMime
+from updog.utils.output import error, info, warn, success
 from updog import version as VERSION
-from utils.qrcode import ErrorCorrectLevel, QRCode
-from utils.utils import get_ip, register_service, get_service_info
+from updog.utils.qrcode import ErrorCorrectLevel, QRCode
+from updog.utils.utils import get_ip, register_service, get_service_info
 
 
 def read_write_directory(directory):
