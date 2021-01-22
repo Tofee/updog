@@ -193,8 +193,8 @@ def main():
                 if request.args.get('gallery') is not None:
                     info('gallery mode')
                     homeHtml = 'gallery.html'
-            requested_path = requested_path.replace('\\', '/')
             pathsList = split_path(requested_path, base_directory)
+            requested_path = requested_path.replace('\\', '/')
             return render_template(homeHtml, files=directory_files, back=back, galleryAllow=args.g,
                                    directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, killable=args.k, zipAllow=args.z, canExecute=args.x, canModify=args.m, paths=pathsList[1], directories=pathsList[0], len=len(pathsList[0]))
         else:
@@ -301,8 +301,7 @@ def main():
                     if not os.path.isdir(new_full_path):
                         shutil.copyfile(full_path,new_full_path)
                 flash('Copied file.')
-            
-            
+
             return redirect(request.referrer)
 
     #############################
