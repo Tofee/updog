@@ -20,6 +20,30 @@ from updog.utils.qrcode import ErrorCorrectLevel, QRCode
 from updog.utils.utils import get_ip, register_service, get_service_info
 
 
+
+class ReverseProxied(object):
+
+    def __init__(self, app, script_name=None, scheme=None, server=None):
+        self.app = app
+        self.script_name = script_name
+        self.scheme = scheme
+        self.server = server
+
+    def __call__(self, environ, start_response):
+        script_name = environ.get('HTTP_X_SCRIPT_NAME', '') or self.script_name
+        if script_name:
+            environ['SCRIPT_NAME'] = script_name
+            path_info = environ['PATH_INFO']
+            if path_info.startswith(script_name):
+                environ['PATH_INFO'] = path_info[len(script_name):]
+        scheme = environ.get('HTTP_X_SCHEME', '') or self.scheme
+        if scheme:
+            environ['wsgi.url_scheme'] = scheme
+        server = environ.get('HTTP_X_FORWARDED_SERVER', '') or self.server
+        if server:
+            environ['HTTP_HOST'] = server
+        return self.app(environ, start_response)
+
 def read_write_directory(directory):
     if os.path.exists(directory):
         if os.access(directory, os.W_OK and os.R_OK):
@@ -38,6 +62,7 @@ def parse_arguments():
                              '[Default=.]')
     parser.add_argument('--port', type=int, default=8090, help='Port to serve [Default=9090]')
     parser.add_argument('--password', type=str, default='', help='Use a password to access the page. (No username)')
+    parser.add_argument('--prefix', type=str, default='', help='Prefix to use for all local URLs')
     parser.add_argument('--file', type=str, default='', help='Restrict to serve specific file')
     parser.add_argument('-ssl', action='store_true', help='Use an encrypted ssl connection(TLS 1.2), if no public/private key pair is sent, one will be generated adhoc')
     parser.add_argument('--hostname', type=str, default='UPDogServer', help='Hostname to use when generating an adhoc SSL connection')
@@ -89,6 +114,8 @@ def zipdir(path, zipF, base="."):
 def main():
     args = parse_arguments()
     app = Flask(__name__)
+    app.wsgi_app = ReverseProxied(app.wsgi_app, script_name=args.prefix)
+    app.config['APPLICATION_ROOT'] = args.prefix
     app.secret_key = os.urandom(16)
     auth = HTTPBasicAuth()
     global base_directory
@@ -449,7 +476,7 @@ def main():
         fileHandlerLog = logging.FileHandler(args.logFile, 'w')
         logger.addHandler(fileHandlerLog)
 
-    print(localIp + ' - ' + str(args.port))
+    print(localIp + ' - ' + str(args.port) + ' - ' + args.prefix)
     # localIp = '127.0.0.1'
     run_simple(localIp, args.port, app, ssl_context=ssl_context)
 

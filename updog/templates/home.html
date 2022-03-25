@@ -107,7 +107,7 @@ margin-top: 0;
         </div>
 
         <div class="heading_title_p">
-            <h2>{% for i in range(0,len) %}{% if directories[i] != '' %}<a href="{{ directories[i] }}" style="text-decoration: underline;">{{paths[i]}}</a>{% else %}{{paths[i]}}{% endif %}/{% endfor %}</h2>
+            <h2>{% for i in range(0,len) %}{% if directories[i] != '' %}<a href="{{ url_for('home') }}.{{ directories[i] }}" style="text-decoration: underline;">{{paths[i]}}</a>{% else %}{{paths[i]}}{% endif %}/{% endfor %}</h2>
         </div>
 		
     </header>
@@ -115,7 +115,7 @@ margin-top: 0;
     {% if canModify %}
     <!-- ----- Upload Form ----- -->
     <div class="inputUploadP">
-        <form method="post" action="/upload" enctype="multipart/form-data" class="uploadForm" onsubmit="return uploading()" id="uploadForm">
+        <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="uploadForm" onsubmit="return uploading()" id="uploadForm">
             <!-- -- Upload File -- -->
             <div class="uploadFile_P">
                 <input type="file" name="file" id="file" class="uploadFile"
@@ -138,7 +138,7 @@ margin-top: 0;
 
     {% if is_subdirectory %}
     <section class="backBtn_p">
-        <a href="/{{ back }}">
+        <a href="{{ url_for('home') }}{{ back }}">
             <i class="fas fa-level-up-alt"></i>
             <span>Back</span>
         </a>
@@ -153,9 +153,9 @@ margin-top: 0;
     {% endfor %}
   {% endif %}
 {% endwith %}
-
+<!--
 <a href="#" onClick="return pop('pop1')">popin 1</a>
-
+-->
     <!-- Table -->
     <section class="table_p table-responsive">
         <table id="tableData" class="table table-hover compact">
@@ -188,7 +188,7 @@ margin-top: 0;
                     {% endif %}
                 </td>
                 <td> <!-- Name -->
-                    <a href="/{{ file.rel_path }}">{{ file.name }}{% if file.is_dir %}/{% endif %}</a>
+                    <a href="{{ url_for('home') }}{{ file.rel_path }}">{{ file.name }}{% if file.is_dir %}/{% endif %}</a>
                 </td>
                 <td data-order="{{ file.size_sort }}"> <!-- File size -->
                     {{ file.size }}
@@ -242,7 +242,7 @@ margin-top: 0;
 
 </div> <!-- end class conn -->
 {% if canModify or canExecute %}
-<form method="post" action="/fileAction" id="fileAction">
+<form method="post" action="{{ url_for('fileAction') }}" id="fileAction">
 <input type="hidden" name="path" value="{{ directory }}">
 <input type="hidden" name="file" value="">
 <input type="hidden" name="action" value="">
@@ -334,7 +334,7 @@ function handleFiles(files) {
 }
 
 function uploadFile(file, i) {
-	var url = '/upload'
+	var url = "{{ url_for('upload') }}"
 	var xhr = new XMLHttpRequest()
 	var formData = new FormData()
 	xhr.open('POST', url, true)
