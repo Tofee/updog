@@ -1,6 +1,10 @@
 $(document).ready(function () {
 	$('#tableData').DataTable({
 		"paging" : false,
+		"responsive" : {
+			"details" : false
+		},
+		"dom": "lrtip",
 		"language" : {
 		    "info" : "_TOTAL_ items",
 		},
