@@ -34,7 +34,9 @@ function uploading(){
         }
     }
     
-    return true;
+    handleFiles(files);
+
+    return false;
 }
 {% endif %}
 function pop(div) {
@@ -323,7 +325,7 @@ function updateProgress(fileNumber, percent) {
 	let total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length
 	progressBar.value = total
 	if(progressBar.value == 100){
-		//setTimeout(function(){window.location.reload(1);}, 2000);
+		setTimeout(function(){window.location.reload(1);}, 2000);
 	}
 }
 
