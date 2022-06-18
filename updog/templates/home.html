@@ -12,33 +12,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome-5.1/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/datatable/datatables.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dropzone.min.css') }}">
 </head>
+<script src="{{ url_for('static', filename='js/dropzone.min.js') }}"></script>
 <script type="text/javascript">
-{% if canModify %}
-function uploading(){
-    var upForm = document.getElementById('uploadForm');
-    
-    if(upForm.file.value == ''){
-        alert('Please insert a file first.');
-        return false;
-    }
-    
-    var files = upForm.file.files;
-    
-    var filesPresent = [{% for file in files %}{% if not file.is_dir %}'{{ file.name }}',{% endif %}{% endfor %}''];
-    
-    for(var i=0; i<files.length; i++){
-        if(filesPresent.includes(upForm.file.files[i].name)){
-            if(!confirm('Are you sure you want to replace the file "' + upForm.file.files[i].name + '"?'))
-                return false;
-        }
-    }
-    
-    handleFiles(files);
-
-    return false;
-}
-{% endif %}
 function pop(div) {
 	document.getElementById(div).style.display='block';
 	document.getElementById('iframeGallery').src = window.location.href + '?gallery';
@@ -100,8 +77,7 @@ margin-top: 0;
 		</div>
 	</div>
 
-<div class="conn" id="drop-area">
-<progress id="progress-bar" max=100 value=0></progress>
+<div class="conn">
     <!-- Header -->
     <header id="header" class="d-flex align_item_center">
         <div onclick="document.location='/'" class="logo_p">
@@ -117,24 +93,38 @@ margin-top: 0;
     {% if canModify %}
     <!-- ----- Upload Form ----- -->
     <div class="inputUploadP">
-        <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="uploadForm" onsubmit="return uploading()" id="uploadForm">
-            <!-- -- Upload File -- -->
-            <div class="uploadFile_P">
-                <input type="file" name="file" id="file" class="uploadFile"
-                       data-multiple-caption="{count} files selected" multiple/>
-                <label for="file">
-                    <i class="fa fa-upload"></i>
-                    <span>Choose a file…</span>
-                </label>
-                <input type="hidden" name="path" value="{{ directory }}">
-            </div>
-            <!-- -- Upload Btn -- -->
-            <p class="uploadBtn_P">
-                <button type="submit" class="uploadBtn btn btn-primary">
-                    Upload
-                </button>
-            </p>
-        </form>
+		<form action="{{ url_for('upload') }}" class="dropzone" id="updog-dropzone" method="POST" enctype="multipart/form-data">
+		</form>
+		<script>
+		  // Here "updogDropzone" is the camelized id of the form.
+		  Dropzone.options.updogDropzone = {
+			uploadMultiple: false,
+			filesizeBase: 1024,
+			dictDefaultMessage: "Select files to upload",
+
+			// The setting up of the dropzone
+			init: function() {
+				var myDropzone = this;
+/*
+				this.on("successmultiple", function(files, response) {
+				  // Gets triggered when the files have successfully been sent.
+					setTimeout(function(){window.location.reload(1);}, 2000);
+				});
+				this.on("errormultiple", function(files, response) {
+				  // Gets triggered when there was an error sending the files.
+				  // Maybe show form again, and notify user of error
+					setTimeout(function(){window.location.reload(1);}, 2000);
+				});
+*/
+            {% for file in files %}
+				{% if not file.is_dir %}
+				    // to show existing file, uncomment following line
+					// myDropzone.displayExistingFile( { name: "{{ file.name }}", size: {{ file.size_sort }} }, "{{ file.rel_path }}" );
+				{% endif %}
+            {% endfor %}
+    			}
+		  };
+		</script>
     </div>
     {% endif %}
 
@@ -147,14 +137,6 @@ margin-top: 0;
     </section>
     {% endif %}
 
-<span id='status-text'></span>
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    {% for message in messages %}
-      <span>{{ message }}</span>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
 <!--
 <a href="#" onClick="return pop('pop1')">popin 1</a>
 -->
@@ -260,108 +242,6 @@ function killServer(){
 }
 {% endif %}
 {% if canModify %}
-
-// ************************ Drag and drop ***************** //
-let dropArea = document.getElementById("drop-area")
-
-// Prevent default drag behaviors
-;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-  dropArea.addEventListener(eventName, preventDefaults, false)   
-  document.body.addEventListener(eventName, preventDefaults, false)
-})
-
-// Highlight drop area when item is dragged over it
-;['dragenter', 'dragover'].forEach(eventName => {
-  dropArea.addEventListener(eventName, highlight, false)
-})
-
-;['dragleave', 'drop'].forEach(eventName => {
-  dropArea.addEventListener(eventName, unhighlight, false)
-})
-
-// Handle dropped files
-dropArea.addEventListener('drop', handleDrop, false)
-
-function preventDefaults (e) {
-  e.preventDefault()
-  e.stopPropagation()
-}
-
-function highlight(e) {
-  dropArea.classList.add('highlight')
-}
-
-function unhighlight(e) {
-  dropArea.classList.remove('active')
-}
-
-function handleDrop(e) {
-  var dt = e.dataTransfer
-  var files = dt.files
-
-  handleFiles(files)
-}
-
-let uploadProgress = []
-let progressBar = document.getElementById('progress-bar')
-let statusText = document.getElementById('status-text')
-
-progressBar.style.visibility = 'hidden'
-
-function initializeProgress(numFiles) {
-  progressBar.style.visibility = ''
-  progressBar.value = 0
-  uploadProgress = []
-
-  statusText.innerText = ''
-  
-  for(let i = numFiles; i > 0; i--) {
-    uploadProgress.push(0)
-  }
-}
-
-function updateProgress(fileNumber, percent) {
-	uploadProgress[fileNumber] = percent
-	let total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length
-	progressBar.value = total
-	if(progressBar.value == 100){
-		setTimeout(function(){window.location.reload(1);}, 2000);
-	}
-}
-
-function handleFiles(files) {
-  files = [...files]
-  initializeProgress(files.length)
-  files.forEach(uploadFile)
-}
-
-function uploadFile(file, i) {
-	var url = "{{ url_for('upload') }}"
-	var xhr = new XMLHttpRequest()
-	var formData = new FormData()
-	xhr.open('POST', url, true)
-	xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
-
-	// Update progress (can be used to show progress indicator)
-	xhr.upload.addEventListener("progress", function(e) {
-		updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
-	})
-
-	xhr.addEventListener('readystatechange', function(e) {
-		if (xhr.readyState == 4 && xhr.status == 200) {
-		  updateProgress(i, 100) // <- Add this
-		  statusText.innerText += file.name + ' sucessfully uploaded.\n'
-		}
-		else if (xhr.readyState == 4 && xhr.status != 200) {
-		  // Error. Inform the user
-		  statusText.innerText += file.name + ' error uploading.\n'
-		}
-	});
-	formData.append('file', file);
-	formData.append('path', '{{ directory }}');
-	xhr.send(formData);
-}
-//*********** drag drop ****
 
 var form = document.getElementById('fileAction');
 function renameFile(fileName){
