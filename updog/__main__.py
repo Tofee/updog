@@ -19,7 +19,8 @@ from updog import version as VERSION
 from updog.utils.qrcode import ErrorCorrectLevel, QRCode
 from updog.utils.utils import get_ip, register_service, get_service_info
 
-
+from PIL import Image, ImageOps
+from io import BytesIO
 
 class ReverseProxied(object):
 
@@ -87,12 +88,25 @@ def parse_arguments():
 
     return args
 
-def serveFile(path, attachment):
-    mimetype = getMime(path)
-    
+def serveFile(path, attachment, preview = False):
     try:
+        if preview:
+            # creating thumbnail
+            image = Image.open(path)
+            (minx,miny,maxx,maxy) = image.getbbox()
+            image_thumbnail = ImageOps.exif_transpose(image).crop((0,0,min(maxx,maxy),min(maxx,maxy)))
+            image_thumbnail.thumbnail((100,100))
+
+            img_io = BytesIO()
+            image_thumbnail.save(img_io, 'JPEG', quality=95)
+            img_io.seek(0)
+
+            response = send_file(img_io, mimetype='image/jpeg', as_attachment=attachment)
+        else:
+            mimetype = getMime(path)
+            response = send_file(path, mimetype=mimetype, as_attachment=attachment)
+            
         #TODO configurable response headers
-        response = send_file(path, mimetype=mimetype, as_attachment=attachment)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
         #end of TODO
@@ -191,13 +205,12 @@ def main():
                         
                         return serveFile(tmp.name, True)
 
-                # Check if the view flag is set
-                if request.args.get('view') is None:
-                    send_as_attachment = True
-                else:
-                    send_as_attachment = False
+                # Check if the data is viewed inline
+                send_as_attachment = request.args.get('view') is None and request.args.get('preview') is None
+                # Check if the (pre)view flag is set
+                send_as_preview = request.args.get('preview') is not None
                     
-                return serveFile(requested_path, send_as_attachment)
+                return serveFile(requested_path, send_as_attachment, send_as_preview)
 
         else:
             # Root home configuration

@@ -102,7 +102,7 @@ margin-top: 0;
 			uploadMultiple: false,
 			filesizeBase: 1024,
 			dictDefaultMessage: "Select files to upload",
-bb
+
 			// The setting up of the dropzone
 			init: function() {
 				var myDropzone = this;
@@ -147,6 +147,7 @@ bb
             <thead>
             <tr>
                 <th width="4%"><!--Type (Directory or File)--></th>
+                <th width="100">Preview</th>
                 <th>Name</th>
                 <th>Size</th>
                 <th>Last Modified</th>
@@ -170,6 +171,11 @@ bb
                     <button class="file_ic"><i class="far fa-folder"></i></button><!-- Directory icon -->
                     {% else %}
                     <button class="file_ic"><i class="far fa-file"></i></button><!-- File icon -->
+                    {% endif %}
+                </td>
+                <td> <!-- Preview -->
+                    {% if not file.is_dir %}
+                    <img height="100" src="{{ url_for('home') }}{{ file.rel_path }}?preview" />
                     {% endif %}
                 </td>
                 <td> <!-- Name -->
