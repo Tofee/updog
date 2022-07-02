@@ -101,11 +101,22 @@ margin-top: 0;
 		  Dropzone.options.updogDropzone = {
 			uploadMultiple: false,
 			filesizeBase: 1024,
+			parallelUploads: 4,
+			maxThumbnailFilesize: 2,
 			dictDefaultMessage: "Select files to upload",
 
 			// The setting up of the dropzone
 			init: function() {
 				var myDropzone = this;
+
+				this.on('success', function (file, json) {
+				    setTimeout(function() {
+					if (file.accepted == true) {
+						myDropzone.removeFile(file);
+					}
+				    }, 2000);
+				});
+
 /*
 				this.on("successmultiple", function(files, response) {
 				  // Gets triggered when the files have successfully been sent.
