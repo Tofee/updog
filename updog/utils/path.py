@@ -41,7 +41,7 @@ def process_files(directory_files, base_directory, imageOnly=False):
             size = '--'
             size_sort = -1
             canExecute = False
-            canWrite = os.access(relPath, os.W_OK)
+            canWrite = os.access(file.path, os.W_OK)
         else:
             if imageOnly:
                 (filename, extension) = os.path.splitext(file.path)
@@ -49,8 +49,8 @@ def process_files(directory_files, base_directory, imageOnly=False):
                     continue
             size = human_readable_file_size(file.stat().st_size)
             size_sort = file.stat().st_size
-            canExecute = os.access(relPath, os.X_OK)
-            canWrite = os.access(relPath, os.W_OK)
+            canExecute = os.access(file.path, os.X_OK)
+            canWrite = os.access(file.path, os.W_OK)
         files.append({
             'name': file.name,
             'is_dir': file.is_dir(),
